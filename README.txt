@@ -1,3 +1,5 @@
+NOTE: I have hosted this software here to easily manage the code across several machines, as well as make and track changes as needed. In no way do I claim ownership or authorship.
+
 Cerulean Hybrid Genome Assembler v0.1.1
 
 This software extends contigs assembled using short read datasets like Illumina
@@ -6,7 +8,7 @@ paired-end reads using long reads like PacBio RS long reads.
 The method is fully described in:
 Deshpande, V., Fung, E. D., Pham, S., & Bafna, V. (2013).
 Cerulean: A hybrid assembly using high throughput short and long reads.
-arXiv preprint arXiv:1307.7933.
+http://arxiv.org/abs/1307.7933
 
 A] Requirements:
 Ubuntu 12.04 (may run on other operating systems, but not tested)
