@@ -65,15 +65,19 @@ parser.add_argument('--nproc', dest='nproc', default=[1],
                     help='number of parallel threads[1]', metavar='Integer',
                     action='store', type=int, nargs=1)
 
+parser.add_argument('--mvl', dest='mvl', default=[2000],
+                    help='minimum vertex length (default = 2000)', metavar='Integer',
+                    action='store', type=int, nargs=1)
+
 args = parser.parse_args()
 dataName = args.dataName[0]
 # dataName = 'ecoli'
 dataDir = args.dataDir[0]
 nproc = args.nproc[0]
-min_vertex_length = 2048
+min_vertex_length = args.mvl[0]
 prefix = dataDir + '/' + dataName
-contigFa = prefix + '-contigs.fa'
-contigDot = prefix + '-contigs.dot'
+contigFa = prefix + '-scaffolds.fa'
+contigDot = prefix + '-scaffolds.dot'
 pbMapping = prefix + '_pacbio_contigs_mapping.fasta.m4'
 pbMappingFormat = 'm4'
 outFa = prefix + '_cerulean.fasta'

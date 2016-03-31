@@ -1,4 +1,5 @@
-NOTE: I have hosted this software here to easily manage the code across several machines, as well as make and track changes as needed. In no way do I claim ownership or authorship.
+NOTE: I have hosted this software here to easily manage the code across several machines, 
+as well as make and track changes as needed. In no way do I claim ownership or authorship.
 
 Cerulean Hybrid Genome Assembler v0.1.1
 
