@@ -48,6 +48,7 @@ from utils import Nx
 from path.path import path
 from sets import Set
 from math import ceil
+from datetime import datetime
 import argparse
 
 parser = argparse.\
@@ -68,10 +69,9 @@ parser.add_argument('--nproc', dest='nproc', default=[1],
 parser.add_argument('--mvl', dest='mvl', default=[2000],
                     help='minimum vertex length (default = 2000)', metavar='Integer',
                     action='store', type=int, nargs=1)
-
+print 'Starting Cerulean.py:', str(datetime.now())
 args = parser.parse_args()
 dataName = args.dataName[0]
-# dataName = 'ecoli'
 dataDir = args.dataDir[0]
 nproc = args.nproc[0]
 min_vertex_length = args.mvl[0]
@@ -80,43 +80,45 @@ contigFa = prefix + '-scaffolds.fa'
 contigDot = prefix + '-scaffolds.dot'
 pbMapping = prefix + '_pacbio_contigs_mapping.fasta.m4'
 pbMappingFormat = 'm4'
-outFa = prefix + '_cerulean.fasta'
-outDot = prefix + '_cerulean.dot'
+outFa = prefix + '-cerulean.fasta'
+outDot = prefix + '-cerulean.dot'
 
-
+print 'Beginning to load graph:', str(datetime.now())
 ig = Graph()
 ig.load(contigDot, contigFa)
-print 'Graph loaded'
-print 'Number of vertices = ', len(ig.vs)
-print 'Number of edges = ', len(ig.es)
+print 'Graph loaded:', str(datetime.now())
+print 'Number of vertices =', len(ig.vs)
+print 'Number of edges =', len(ig.es)
 original_contig_lengths = [v.length for v in ig.vs.values() if v.vid > 0]
 original_contig_lengths.sort()
-print ("Total input contig length = "), sum(original_contig_lengths)
+print ("Total input contig length ="), sum(original_contig_lengths)
 original_contig_lengths.sort()
-print "Input N50 = ", Nx(original_contig_lengths)
+print "Input N50 =", Nx(original_contig_lengths)
 
+print 'Beginning to load mapping:', str(datetime.now())
 pbm = PacbioMapping(pbMapping, pbMappingFormat)
-print "Mapping loaded"
-print "Number of mapping reads = ", len(pbm.readToContig)
-print "Number of mapping contigs = ", len(pbm.contigToRead)
-readlens = [PacbioAlignment(pbm.readToContig[r][0], pbMappingFormat).queryLen
-            for r in pbm.readToContig]
+print "Mapping loaded:", str(datetime.now())
+print "Number of mapping reads =", len(pbm.readToContig)
+print "Number of mapping contigs =", len(pbm.contigToRead)
+readlens = [PacbioAlignment(pbm.readToContig[r][0], pbMappingFormat).queryLen for r in pbm.readToContig]
 readlens.sort()
-print "Length of mapping reads = ", sum(readlens)
-print "N50 of mapping reads = ", Nx(readlens)
-
+print "Length of mapping reads =", sum(readlens)
+print "N50 of mapping reads =", Nx(readlens)
 pacbioCoverage = sum(readlens) / sum(original_contig_lengths)
-print "Mapping Pacbio Coverage = ", pacbioCoverage
+print "Mapping Pacbio Coverage =", pacbioCoverage
 min_read_threshold = ceil(pacbioCoverage * 3 / 17)
 max_read_threshold = ceil(pacbioCoverage * 10 / 17)
 print "Read Thresholds =", min_read_threshold, max_read_threshold
 
-
+print 'Beginning to load LongContigGraph:', str(datetime.now())
 lcg = LongContigGraph(ig, pbm, num_threads=nproc,
                       read_thresholds=(min_read_threshold,
                                        max_read_threshold))
-print "LongContigGraph loaded", len(lcg.vs), len(lcg.es)
+print "LongContigGraph loaded:", str(datetime.now())
+print 'Vertices:', len(lcg.vs) 
+print 'Edges:', len(lcg.es)
 
+print 'Beginning to process simple paths and splcg:', str(datetime.now())
 splcg = lcg.get_simple_paths()
 svs = Set([])
 svs2 = Set([])
@@ -127,7 +129,7 @@ for p in splcg:
     for e in p:
         svs.add(e.v1.Name())
         svs.add(e.v2.Name())
-
+print 'Done processing simple paths and splcg:', str(datetime.now())
 
 f = path(outDot).open('w')
 f.write(lcg.__repr__())

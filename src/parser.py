@@ -40,83 +40,46 @@
 #Author: Son Pham
 #Contact: kspham@eng.ucsd.edu
 
+#Re-written by Dan Browne on 04/01/2016
+
 from utils import rc
-from path.path import path
+import subprocess
+from pyfaidx import Fasta
 
 #parse graph vertices
 
-
 def graph_vertices(filename):
-    filepath = path(filename)
-    graph = filepath.open()
-    ignorelines = 3
-    for _ in range(ignorelines):
-        graph.readline()
-
-    while True:
-        line = graph.readline()
-        graph.readline()
-        if '->' in line:
-            break
-        vinf = line.strip().split()
-        v = vinf[0].strip('"')
-        vid = int(v[:-1])
-        if vid == 0:
-            vid = 721199353
-        if v[-1] == '-':
-            vid = -1 * vid
-        length = int(vinf[1][3:])
-        cov = int(vinf[2][2:-1])
+    proc = subprocess.Popen(["grep", "'l='", filename], stdout=subprocess.PIPE)
+    graph = proc.communicate()[0].split('\n')[:-1]
+    graph = [x.split(' ') for x in graph[::2]]
+    for x in graph:
+        vid = int(x[0][1:-2])
         vid_conj = -1 * vid
+        length = int(x[1][3:])
+        cov = int(x[2][2:-1])
         yield vid, vid_conj, length, cov
 
-    graph.close()
 
 #parse graph edges
 
-
 def graph_edges(filename):
-    filepath = path(filename)
-    graph = filepath.open()
-    for _ in range(3):
-        line = graph.readline()
-    defaultoverlap = int(line.strip().split()[1][3:-1])
-
-    while '->' not in line:
-        line = graph.readline()
-    while True:
-        edgeinfo = line.strip().split()
-        v1id = int(edgeinfo[0][1:-2])
-        if v1id == 0:
-            v1id = 721199353
-        if edgeinfo[0][-2] == '-':
-            v1id = -1 * v1id
-        v2id = int(edgeinfo[2][1:-2])
-        if v2id == 0:
-            v2id = 721199353
-        if edgeinfo[2][-2] == '-':
-            v2id = -1 * v2id
-
-        newoverlap = defaultoverlap
-        if len(edgeinfo) == 4:
-            newoverlap = int(edgeinfo[3][3:-1])
+    proc = subprocess.Popen(["grep", "'>'", filename], stdout=subprocess.PIPE)
+    graph = proc.communicate()[0].split('\n')[:-1]
+    graph = [x.split(' ') for x in graph]
+    proc = subprocess.Popen(["grep", "-o", "'k=[0-9]*'", filepath], stdout=subprocess.PIPE)
+    defaultoverlap = int(proc.communicate()[0][2:])
+    for x in graph:
+        v1id = lambda x: -1 * int(x[0][1:-2]) if x[0][-2] == '-' else int(x[0][1:-2])
+        v2id = lambda x: -1 * int(x[2][1:-2]) if x[2][-2] == '-' else int(x[2][1:-2])
+        newoverlap = lambda x: int(x[3][3:-1]) if len(x) == 4 else defaultoverlap
         yield v1id, v2id, newoverlap
-        line = graph.readline()
-        if '}' in line:
-            break
-    graph.close()
+
 
 
 def contigs_sequence(filename):
-    filepath = path(filename)
-    contigs = filepath.open()
-    while True:
-        idinf = contigs.readline().strip()
-        if len(idinf) < 1:
-            break
-        seq = contigs.readline().strip()
-        contigid = int(idinf.strip().split()[0][1:])
-        if contigid == 0:
-            contigid = 721199353
-        yield contigid, seq
-        yield -1 * contigid, rc(seq)
+    contigs = Fasta(filename)
+    for x in range(len(contigs)):
+        yield int(contigs[x].name), contigs[x]
+        yield int(-1 * contigs[x].name), rc(contigs[x])
+
+
