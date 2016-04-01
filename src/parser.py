@@ -69,9 +69,9 @@ def graph_edges(filename):
     proc = subprocess.Popen(["grep", 'edge', filename], stdout=subprocess.PIPE)
     defaultoverlap = int(proc.communicate()[0].translate(None, "edge [d=]"))
     for x in graph:
-        v1id = lambda x: -1 * int(x[0][1:-2]) if x[0][-2] == '-' else int(x[0][1:-2])
-        v2id = lambda x: -1 * int(x[2][1:-2]) if x[2][-2] == '-' else int(x[2][1:-2])
-        newoverlap = lambda x: int(x[3][3:-1]) if len(x) == 4 else defaultoverlap
+        v1id = -1 * int(x[0][1:-2]) if x[0][-2] == '-' else int(x[0][1:-2])
+        v2id = -1 * int(x[2][1:-2]) if x[2][-2] == '-' else int(x[2][1:-2])
+        newoverlap = int(x[3][3:-1]) if len(x) == 4 else defaultoverlap
         yield v1id, v2id, newoverlap
 
 
