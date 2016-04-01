@@ -263,7 +263,6 @@ class Graph(Abstract_Graph):
     def load(self, graph_filename, seq_filename=None):
         for vid, conj, length, cov in parser.graph_vertices(graph_filename):
             self.add_vertex(vid, conj, length, cov)
-            self.add_vertex(conj, vid, length, cov)
 
         for v1, v2, overlap in parser.graph_edges(graph_filename):
             self.add_edge(v1, v2, overlap)
