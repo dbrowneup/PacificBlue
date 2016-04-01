@@ -66,7 +66,7 @@ def graph_edges(filename):
     proc = subprocess.Popen(["grep", "'>'", filename], stdout=subprocess.PIPE)
     graph = proc.communicate()[0].split('\n')[:-1]
     graph = [x.split(' ') for x in graph]
-    proc = subprocess.Popen(["grep", "-o", "'k=[0-9]*'", filepath], stdout=subprocess.PIPE)
+    proc = subprocess.Popen(["grep", "-o", "'k=[0-9]*'", filename], stdout=subprocess.PIPE)
     defaultoverlap = int(proc.communicate()[0][2:])
     for x in graph:
         v1id = lambda x: -1 * int(x[0][1:-2]) if x[0][-2] == '-' else int(x[0][1:-2])
