@@ -49,7 +49,7 @@ from pyfaidx import Fasta
 #parse graph vertices
 
 def graph_vertices(filename):
-    proc = subprocess.Popen(["grep", "'l='", filename], stdout=subprocess.PIPE)
+    proc = subprocess.Popen(["grep", 'l=', filename], stdout=subprocess.PIPE)
     graph = proc.communicate()[0].split('\n')[:-1]
     graph = [x.split(' ') for x in graph[::2]]
     for x in graph:
@@ -63,11 +63,11 @@ def graph_vertices(filename):
 #parse graph edges
 
 def graph_edges(filename):
-    proc = subprocess.Popen(["grep", "'>'", filename], stdout=subprocess.PIPE)
+    proc = subprocess.Popen(["grep", '>', filename], stdout=subprocess.PIPE)
     graph = proc.communicate()[0].split('\n')[:-1]
     graph = [x.split(' ') for x in graph]
-    proc = subprocess.Popen(["grep", "'edge'", filename], stdout=subprocess.PIPE)
-    defaultoverlap = int(proc.communicate()[0].translate(None, "edge[] \n"))
+    proc = subprocess.Popen(["grep", 'edge', filename], stdout=subprocess.PIPE)
+    defaultoverlap = int(proc.communicate()[0].translate(None, "edge [d=]"))
     for x in graph:
         v1id = lambda x: -1 * int(x[0][1:-2]) if x[0][-2] == '-' else int(x[0][1:-2])
         v2id = lambda x: -1 * int(x[2][1:-2]) if x[2][-2] == '-' else int(x[2][1:-2])
