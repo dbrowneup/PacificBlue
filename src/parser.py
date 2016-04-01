@@ -79,7 +79,7 @@ def graph_edges(filename):
 def contigs_sequence(filename):
     contigs = Fasta(filename)
     for x in contigs:
-        yield int(x.name), x
-        yield -1 * int(x.name), rc(x)
+        yield int(x.name), str(x)
+        yield -1 * int(x.name), rc(str(x))
 
 
