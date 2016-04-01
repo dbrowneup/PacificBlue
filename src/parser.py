@@ -51,9 +51,9 @@ from pyfaidx import Fasta
 def graph_vertices(filename):
     proc = subprocess.Popen(["grep", 'l=', filename], stdout=subprocess.PIPE)
     graph = proc.communicate()[0].split('\n')[:-1]
-    graph = [x.split(' ') for x in graph[::2]]
+    graph = [x.split(' ') for x in graph]
     for x in graph:
-        vid = int(x[0][1:-2])
+        vid = int(x[0][1:-2]) if x[0][-2] == '+' else -1 * int(x[0][1:-2])
         vid_conj = -1 * vid
         length = int(x[1][3:])
         cov = int(x[2][2:-1])
@@ -78,8 +78,8 @@ def graph_edges(filename):
 
 def contigs_sequence(filename):
     contigs = Fasta(filename)
-    for x in range(len(contigs)):
-        yield int(contigs[x].name), contigs[x]
-        yield int(-1 * contigs[x].name), rc(contigs[x])
+    for x in contigs:
+        yield int(x.name), x
+        yield -1 * int(x.name), rc(x)
 
 
