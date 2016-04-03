@@ -67,7 +67,7 @@ class LongContigGraph(Graph):
         self.num_threads = num_threads
         self.read_count_threshold_high = read_thresholds[1]
         self.read_count_threshold_low = read_thresholds[0]
-        vertex_length_schedule = [2048, 1024, 512, 256]
+        vertex_length_schedule = [100000, 50000, 25000, 12500, 6250, 1000]
         previous_vertex_length = 10000000000
 
         mapping_reads = self.mapping.readToContig.keys()
