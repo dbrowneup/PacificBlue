@@ -69,46 +69,4 @@ class PacbioAlignment(AbstractAlignment):
                                        sStart, sEnd, ll[0],
                                        Strand(ll[2]), qStart, qEnd,
                                        ll[8], ll[11])
-        elif fileFormat == 'm4algae':
-            if Strand(ll[8]) == '-':
-                sStart = int(ll[11]) - int(ll[10])
-                sEnd = int(ll[11]) - int(ll[9])
-            else:
-                sStart = int(ll[9])
-                sEnd = int(ll[10])
-            if Strand(ll[4]) == '-':
-                qStart = int(ll[7]) - int(ll[6])
-                qEnd = int(ll[7]) - int(ll[5])
-            else:
-                qStart = int(ll[5])
-                qEnd = int(ll[6])
-            AbstractAlignment.__init__(self, ll[1], Strand(ll[8]), sStart,
-                                       sEnd, ll[0], Strand(ll[4]),
-                                       qStart, qEnd, ll[11], ll[7])
-        elif fileFormat == 'blastn':
-            sStrand = '+'
-            if len(ll) >= 14:
-                if int(ll[9]) - int(ll[8]) < 0:
-                    sStrand = '-'
-                    AbstractAlignment.__init__(self, ll[1], sStrand, ll[9],
-                                               ll[8], ll[0], '+', ll[6], ll[7],
-                                               ll[13], ll[12])
-                else:
-                    sStrand = '+'
-                    AbstractAlignment.__init__(self, ll[1], sStrand, ll[8],
-                                               ll[9], ll[0], '+', ll[6], ll[7],
-                                               ll[13], ll[12])
-            else:
-                if int(ll[9]) - int(ll[8]) < 0:
-                    sStrand = '-'
-                    AbstractAlignment.__init__(self, ll[1], sStrand, ll[9],
-                                               ll[8], ll[0], '+', ll[6], ll[7])
-                else:
-                    sStrand = '+'
-                    AbstractAlignment.__init__(self, ll[1], sStrand, ll[8],
-                                               ll[9], ll[0], '+', ll[6], ll[7])
 
-        else:
-            ll = line.strip().split()
-            AbstractAlignment.__init__(self, ll[0], ll[1], ll[2],
-                                       ll[3], ll[4], ll[4], ll[5], ll[6])
