@@ -51,7 +51,7 @@ import math
 
 class LongContigGraph(Graph):
 
-    def __init__(self, contigGraph, mapping, map_margin=0.7,
+    def __init__(self, contigGraph, mapping, vls, map_margin=0.7,
                  augment_paths=True, offset_margin=0.1, num_threads=1,
                  read_thresholds=(3,10)):
         Graph.__init__(self)
@@ -67,7 +67,7 @@ class LongContigGraph(Graph):
         self.num_threads = num_threads
         self.read_count_threshold_high = read_thresholds[1]
         self.read_count_threshold_low = read_thresholds[0]
-        vertex_length_schedule = [100000, 50000, 25000, 12500, 6250, 1000]
+        vertex_length_schedule = vls
         previous_vertex_length = 10000000000
 
         mapping_reads = self.mapping.readToContig.keys()

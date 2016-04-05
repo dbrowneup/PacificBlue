@@ -51,8 +51,7 @@ from math import ceil
 from datetime import datetime
 import argparse
 
-parser = argparse.\
-ArgumentParser(description="Cerulean hybrid assembler v0.1.1")
+parser = argparse.ArgumentParser(description="Cerulean hybrid assembler v0.1.1")
 
 parser.add_argument('--dataname', dest='dataName',
                     help="name of dataset", metavar='String',
@@ -62,19 +61,25 @@ parser.add_argument('--basedir', dest='dataDir',
                     help="path to directory containing data", metavar='Path',
                     action='store', type=str, nargs=1)
 
-parser.add_argument('--nproc', dest='nproc', default=[1],
-                    help='number of parallel threads[1]', metavar='Integer',
+parser.add_argument('--nproc', dest='nproc', default=1,
+                    help='number of parallel threads (default = 1)', metavar='Integer',
                     action='store', type=int, nargs=1)
 
-parser.add_argument('--mvl', dest='mvl', default=[2000],
+parser.add_argument('--mvl', dest='mvl', default=2000,
                     help='minimum vertex length (default = 2000)', metavar='Integer',
                     action='store', type=int, nargs=1)
+
+parser.add_argument('--vls', dest='vls', default=[10000, 2000, 400],
+                    help='vertex length schedule (default = 10000 2000 400)', metavar='Integer',
+                    action='store', type=int, nargs='+')
+
 print 'Starting Cerulean.py:', str(datetime.now())
 args = parser.parse_args()
 dataName = args.dataName[0]
 dataDir = args.dataDir[0]
-nproc = args.nproc[0]
-min_vertex_length = args.mvl[0]
+nproc = args.nproc
+min_vertex_length = args.mvl
+length_schedule = args.vls
 prefix = dataDir + '/' + dataName
 contigFa = prefix + '-scaffolds.fa'
 contigDot = prefix + '-scaffolds.dot'
@@ -111,7 +116,7 @@ max_read_threshold = ceil(pacbioCoverage * 10 / 17)
 print "Read Thresholds =", min_read_threshold, max_read_threshold
 
 print 'Beginning to load LongContigGraph:', str(datetime.now())
-lcg = LongContigGraph(ig, pbm, num_threads=nproc,
+lcg = LongContigGraph(ig, pbm, length_schedule, num_threads=nproc,
                       read_thresholds=(min_read_threshold,
                                        max_read_threshold))
 print "LongContigGraph loaded:", str(datetime.now())
