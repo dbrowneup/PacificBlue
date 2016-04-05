@@ -40,8 +40,9 @@
 #Author: Viraj Deshpande
 #Contact: vdeshpan@eng.ucsd.edu
 
+#Re-written by Dan Browne on 04/05/16
+
 from PacbioAlignment import PacbioAlignment
-from path.path import path
 
 
 class PacbioMapping:
@@ -49,72 +50,20 @@ class PacbioMapping:
     def __init__(self, fileName, fileFormat="m4", map_margin=0.5):
         self.readToContig = {}
         self.contigToRead = {}
-        self.alignments = []
-        self.numAlignments = 0
         self.fileFormat = fileFormat
+        self.alignments = open(fileName, "rU").read().split('\n') # reads alignments
+        self.alignments = self.alignments[1:-1] if "score" in self.alignments[0] else self.alignments[0:-1] # discards empty last row and first row if header
+        self.alignments = [x.split(' ')[:-1] for x in self.alignments] # splits alignment into list and discards nCells column
+        self.readToContig = {x[0]: [] for x in self.alignments if x[0] not in self.readToContig} # parses qname into dictionary
+        self.contigToRead = {x[1]: [] for x in self.alignments if x[1] not in self.contigToRead} # parses tname into dictionary
 
-        if fileFormat in ['m4', 'blastn', 'm4algae']:
-            fpath = path(fileName)
-            f = fpath.open()
-            for line in f:
-                if len(line) <= 1 or line[0] == "#" or \
-                    line == "qname tname score pctsimilarity qstrand " + \
-                            "qstart qend qseqlength tstrand tstart tend " + \
-                            "tseqlength mapqv ncells clusterScore probscore" \
-                            + " numSigClusters\n" or \
-                    line == "qname tname qstrand tstrand score " + \
-                            "pctsimilarity tstart tend tlength qstart qend" + \
-                            " qlength ncells\n":
-                    continue
-                self.alignments.append(line.strip())
-                self.numAlignments += 1
-                pa = PacbioAlignment(line.strip(), fileFormat)
-                if not pa.longAlignment(map_margin):
-                    continue
-#                 if fileFormat == 'blastn':
-#                     ll = line.strip().split()
-#                     if float(ll[2]) < 98:
-#                         continue
-                sID = pa.seqID
-                qID = pa.queryID
-                if sID in self.contigToRead:
-                    self.contigToRead[sID]. \
-                        append(self.alignments[self.numAlignments - 1])
-                else:
-                    self.contigToRead[sID] = \
-                        [self.alignments[self.numAlignments - 1]]
+        #parse alignments into dictionaries
+        for align in self.alignments:
+            self.readToContig[align[0]].append(align)
+            self.contigToRead[align[1]].append(align)
 
-                if qID in self.readToContig:
-                    self.readToContig[qID]. \
-                        append(self.alignments[self.numAlignments - 1])
-                else:
-                    self.readToContig[qID] = \
-                        [self.alignments[self.numAlignments - 1]]
-            f.close()
-        #sort mappings in decreasing order of contig length
+        #sort readToContig mappings in decreasing order of contig length
         for qID in self.readToContig:
-            self.readToContig[qID].sort(cmp=lambda x, y:
-                                        PacbioAlignment(y, fileFormat).seqLen -
-                                        PacbioAlignment(x, fileFormat).seqLen)
+            self.readToContig[qID] = sorted(self.readToContig[qID], key=lambda x: int(x[8]), reverse=True)
 
-    def positions_on_seq(self, qID, qStrand):
-        if qID not in self.readToContig:
-            return []
-        positions = []
-        for m in self.readToContig[qID]:
-            a = PacbioAlignment(m, self.fileFormat)
-            if qStrand == '+':
-                if a.queryStrand == a.seqStrand:
-                    positions.append(a.seqStartPos - a.queryStartPos)
-                else:
-                    positions.append(a.seqEndPos + a.queryStartPos)
-            else:
-                if a.queryStrand == a.seqStrand:
-                    positions.append(a.seqEndPos +
-                                     (a.queryLen - a.queryEndPos))
-                else:
-                    positions.append(a.seqStartPos -
-                                     (a.queryLen - a.queryEndPos))
-        return positions
-#m = PacbioMapping("data/sorted_best30.fasta.m4")
-#print m.contigToRead["228045"]
+

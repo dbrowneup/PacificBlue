@@ -51,7 +51,7 @@ class PacbioAlignment(AbstractAlignment):
                 return '+'
             return '-'
 
-        ll = line.strip().split()
+        ll = line
         if fileFormat == 'm4':
             if Strand(ll[3]) == '-':
                 sStart = int(ll[8]) - int(ll[7])
