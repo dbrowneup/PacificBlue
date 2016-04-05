@@ -60,17 +60,11 @@ class PacbioSubgraph(Graph):
 
         dbg_numedges = 0
 
-        for i in range(len(pacbio_mapping.readToContig[pacbio_id])):
-            a1 = PacbioAlignment(pacbio_mapping.readToContig[pacbio_id][i])
+        for align in pacbio_mapping.readToContig[pacbio_id]:
+            a1 = PacbioAlignment(align)
             if a1.seqLen < min_vertex_length:
                 continue
-            if not a1.longAlignment(map_margin):
-                continue
-            if a1.queryStrand == '+':
-                s1 = a1.seqStrand
-            else:
-                s1 = toggleStrand(a1.seqStrand)
-            v1 = ig.vs[ig.get_vid(a1.seqID, s1)]
+            v1 = ig.vs[ig.get_vid(a1.seqID, a1.seqStrand)]
             self.add_vertex(v1.vid, v1.conj.vid, v1.length, v1.cov)
             self.vertex_mapping[v1.vid] = a1
             v1c = v1.conj
