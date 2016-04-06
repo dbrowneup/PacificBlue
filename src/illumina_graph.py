@@ -119,7 +119,6 @@ class Graph(Abstract_Graph):
                 sys.exit('Inconsistent eid')
             else:
                 return self.es[eid]
-
         if v2 in v1.outv():
             for e in v1.oute:
                 if e.v2 == v2:
@@ -127,27 +126,19 @@ class Graph(Abstract_Graph):
                         return e
                     sys.exit('Inconsistent eid')
             sys.exit('Edge not found!')
-
         if eid is None:
-            while self.max_eid in self.es.keys():
-                self.max_eid += 1
-            neweid = self.max_eid
-            self.max_eid += 1
+            neweid = len(self.es) + 1
         else:
             if eid in self.es.keys():
                 sys.exit("EID exists")
             neweid = eid
         e = OEdge(neweid, v1, v2, overlap)
-        v1 = self.vs[v1id]
-        v2 = self.vs[v2id]
         self.es[e.eid] = e
         #if the conjugate already exists, add conjugate
-        v1conj = v1.conj
-        v2conj = v2.conj
-        if v1conj in v2conj.outv():
+        if v1.conj in v2.conj.outv():
             ej = None
-            for ec in v2conj.oute:
-                if ec.v2 == v1conj:
+            for ec in v2.conj.oute:
+                if ec.v2 == v1.conj:
                     ej = ec
             if not ej:
                 sys.exit('Conjugate edge not found!')
