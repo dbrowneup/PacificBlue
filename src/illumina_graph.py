@@ -41,7 +41,6 @@
 #Contact: kspham@eng.ucsd.edu, vdeshpan@eng.ucsd.edu
 
 from abstract_graph import Abstract_Graph, Abstract_Edge, Abstract_Vertex
-import logging
 import parser
 import sys
 from utils import conjugate

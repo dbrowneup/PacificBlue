@@ -40,7 +40,6 @@
 #Author: Son Pham
 #Contact: kspham@cs.ucsd.edu
 
-import logging
 
 
 class Abstract_Vertex(object):
@@ -78,4 +77,4 @@ class Abstract_Graph(object):
     def __init__(self):
         self.es = {}  # key -->edges
         self.vs = {}  # key -->vertices
-        self.logger = logging.getLogger('Algae')
+
