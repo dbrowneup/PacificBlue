@@ -92,8 +92,6 @@ class OEdge(Abstract_Edge):
 class Graph(Abstract_Graph):
     def __init__(self):
         Abstract_Graph.__init__(self)
-        self.max_eid = 0
-        self.logger = logging.getLogger('Algae')
 
     def add_vertex(self, vid, conj_id, vlen, cov):
         if vid in self.vs:
