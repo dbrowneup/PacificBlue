@@ -260,30 +260,10 @@ class Graph(Abstract_Graph):
             for vid, vseq in parser.contigs_sequence(seq_filename):
                 if vid in self.vs.keys():
                     if self.vs[vid].length != len(vseq):
-                        print('Graph.load: Vertex length not consistent' +
-                                 '\t'.join(map(str, [vid, self.vs[vid].length,
-                                               len(vseq)])))
-                        if len(vseq) < self.vs[vid].length:
-                            if vid > 0:
-                                self.add_seq(vid, vseq +
-                                             ('N' *
-                                              (self.vs[vid].length -
-                                               len(vseq))))
-                            else:
-                                self.add_seq(vid, ('N' * (self.vs[vid].length -
-                                               len(vseq))) + vseq)
-                        else:
-                            if vid > 0:
-                                self.add_seq(vid, vseq[:self.vs[vid].length])
-                            else:
-                                self.add_seq(vid,
-                                             vseq[-1 * self.vs[vid].length:])
-                        continue
+                        sys.exit("Graph.load: Vertex ("+str(vid)+") length not consistent with fasta sequence length")
                     self.add_seq(vid, vseq)
                 else:
-                    length = len(vseq)
-                    self.add_vertex(vid, -1 * vid, length, 0)
-                    self.add_seq(vid, vseq)
+                    sys.exit("Graph.load: Fasta vertex ("+str(vid)+") not found in self.vs.keys()")
 
     def get_vid(self, name, strand):
         if strand == '+':
