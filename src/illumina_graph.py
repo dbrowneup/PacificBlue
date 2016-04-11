@@ -263,7 +263,7 @@ class Graph(Abstract_Graph):
                         sys.exit("Graph.load: Vertex ("+str(vid)+") length not consistent with fasta sequence length")
                     self.add_seq(vid, vseq)
                 else:
-                    sys.exit("Graph.load: Fasta vertex ("+str(vid)+") not found in self.vs.keys()")
+                    sys.exit("Graph.load: Fasta sequence ("+str(vid)+") not found in self.vs.keys()")
 
     def get_vid(self, name, strand):
         if strand == '+':
@@ -428,30 +428,3 @@ class Graph(Abstract_Graph):
         plt.draw()
         plt.savefig(pngFileName)
 
-#g = Graph()
-#g.load("data/spalgae-contigs.dot",None)
-#branches = 0
-#small_branches = 0
-#
-#for i in g.vs.values():
-#    if len(i.outv()) > 1 and len(i.innv())> 1:
-#
-##        print "multiple"
-#        print i.length
-#        if i.length < 100:
-#            small_branches +=1
-#        branches +=1
-##        print "Middle", i
-##        print "Out" , i.outv()
-##        print "Inn", i.innv()
-#portion = "small contigs", small_branches*1.0/branches
-#print "small contigs portion", portion
-
-#g.load_dna("data/spalgae-contigs.fasta")
-#print g.path_seq([g.es[0]])
-
-#for i in g.vs.values():
-#    print i
-
-#for i in g.es.values():
-#    print i
