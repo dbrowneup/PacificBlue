@@ -45,7 +45,6 @@ from illumina_graph import Graph
 from PacbioMapping import PacbioMapping
 from PacbioAlignment import PacbioAlignment
 from utils import Nx
-from path.path import path
 from sets import Set
 from math import ceil
 from datetime import datetime
@@ -136,11 +135,11 @@ for p in splcg:
         svs.add(e.v2.Name())
 print 'Done processing simple paths and splcg:', str(datetime.now())
 
-f = path(outDot).open('w')
+f = open(outDot, 'w')
 f.write(lcg.__repr__())
 f.close()
 
-f = path(outFa).open('w')
+f = open(outDot, 'w')
 
 seen_vertices = {vid: False for vid in ig.vs.keys()}
 
