@@ -95,7 +95,7 @@ original_contig_lengths.sort()
 print "Input N50 =", Nx(original_contig_lengths)
 
 pbm = PacbioMapping(pbMapping, pbMappingFormat)
-readlens = [r[0].queryLen for r in pbm.readToContig]
+readlens = [r[0].queryLen for r in pbm.readToContig.values()]
 readlens.sort()
 print "Length of mapping reads =", sum(readlens)
 print "N50 of mapping reads =", Nx(readlens)
