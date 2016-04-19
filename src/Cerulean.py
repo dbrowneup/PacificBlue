@@ -86,13 +86,9 @@ pbMappingFormat = 'm4'
 outFa = prefix + '-cerulean.fasta'
 outDot = prefix + '-cerulean.dot'
 
-print 'Beginning to load graph:', str(datetime.now())
 ig = Graph()
 ig.load(contigDot, contigFa)
-print 'Graph loaded:', str(datetime.now())
-print 'Number of vertices =', len(ig.vs)
-print 'Number of edges =', len(ig.es)
-original_contig_lengths = [v.length for v in ig.vs.values() if v.vid > 0]
+original_contig_lengths = [v.length for v in ig.vs.values()]
 original_contig_lengths.sort()
 print ("Total input contig length ="), sum(original_contig_lengths)
 original_contig_lengths.sort()

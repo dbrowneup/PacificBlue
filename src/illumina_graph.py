@@ -45,6 +45,7 @@ import parser
 import sys
 from utils import conjugate
 from sets import Set
+from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import math
@@ -249,6 +250,7 @@ class Graph(Abstract_Graph):
         return seq
 
     def load(self, graph_filename, seq_filename=None):
+        print "Beginning to load contig graph:", str(datetime.now())
         for vid, conj, length, cov in parser.graph_vertices(graph_filename):
             self.add_vertex(vid, conj, length, cov)
 
@@ -263,7 +265,9 @@ class Graph(Abstract_Graph):
                     self.add_seq(vid, vseq)
                 else:
                     sys.exit("Graph.load: Fasta sequence ("+str(vid)+") not found in self.vs.keys()")
-
+        print "Number of vertices:", len(self.vs)
+        print "Number of edges:", len(self.es)
+        print "Finished loading contig graph:", str(datetime.now())
     def get_vid(self, name, strand):
         if strand == '+':
             return int(name)
