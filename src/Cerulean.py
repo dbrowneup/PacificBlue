@@ -43,7 +43,6 @@
 from long_contig_graph import LongContigGraph
 from illumina_graph import Graph
 from PacbioMapping import PacbioMapping
-from PacbioAlignment import PacbioAlignment
 from utils import Nx
 from sets import Set
 from math import ceil
@@ -99,12 +98,8 @@ print ("Total input contig length ="), sum(original_contig_lengths)
 original_contig_lengths.sort()
 print "Input N50 =", Nx(original_contig_lengths)
 
-print 'Beginning to load mapping:', str(datetime.now())
 pbm = PacbioMapping(pbMapping, pbMappingFormat)
-print "Mapping loaded:", str(datetime.now())
-print "Number of mapping reads =", len(pbm.readToContig)
-print "Number of mapping contigs =", len(pbm.contigToRead)
-readlens = [PacbioAlignment(pbm.readToContig[r][0], pbMappingFormat).queryLen for r in pbm.readToContig]
+readlens = [r[0].queryLen for r in pbm.readToContig]
 readlens.sort()
 print "Length of mapping reads =", sum(readlens)
 print "N50 of mapping reads =", Nx(readlens)

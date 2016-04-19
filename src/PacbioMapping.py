@@ -43,11 +43,12 @@
 #Re-written by Dan Browne on 04/05/16
 
 from PacbioAlignment import PacbioAlignment
-
+from datetime import datetime
 
 class PacbioMapping:
 
-    def __init__(self, fileName, fileFormat="m4", map_margin=0.5):
+    def __init__(self, fileName, fileFormat="m4"):
+        print "Beginning to load PacBio mapping:", str(datetime.now())
         self.readToContig = {}
         self.contigToRead = {}
         self.fileFormat = fileFormat
@@ -56,14 +57,32 @@ class PacbioMapping:
         self.alignments = [x.split(' ')[:-1] for x in self.alignments] # splits alignment into list and discards nCells column
         self.readToContig = {x[0]: [] for x in self.alignments if x[0] not in self.readToContig} # parses qname into dictionary
         self.contigToRead = {x[1]: [] for x in self.alignments if x[1] not in self.contigToRead} # parses tname into dictionary
-
         #parse alignments into dictionaries
         for align in self.alignments:
-            self.readToContig[align[0]].append(align)
-            self.contigToRead[align[1]].append(align)
-
+            self.readToContig[align[0]].append(PacbioAlignment(align))
+            self.contigToRead[align[1]].append(PacbioAlignment(align))
+        print "Number of mapping reads:", len(self.readToContig)
+        print "Number of mapping contigs:", len(self.contigToRead)
         #sort readToContig mappings in decreasing order of contig length
         for qID in self.readToContig:
-            self.readToContig[qID] = sorted(self.readToContig[qID], key=lambda x: int(x[8]), reverse=True)
-
-
+            self.readToContig[qID] = sorted(self.readToContig[qID], key=lambda x: x.seqLen, reverse=True)
+        print "Finished loading PacBio mapping:", str(datetime.now())
+    def filter_reads(self, length_fraction=0.7):
+        #remove all reads with only 1 alignment
+        #remove reads where 1st alignment covers >= 70% (length_fraction) of read length
+        print "Beginning read filtration:", str(datetime.now())
+        filtered_reads = []
+        for k,v in self.readToContig.items():
+            map_length = v[0].queryEndPos - v[0].queryStartPos
+            if len(v) == 1:
+                filtered_reads.append(k)
+                del self.readToContig[k]
+            elif map_length >= v[0].queryLen * length_fraction:
+                filtered_reads.append(k)
+                del self.readToContig[k]
+        for k,v in self.contigToRead.items():
+            for z in v:
+                if z.queryID in filtered_reads:
+                    self.contigToRead[k] = v.remove(z)
+        print "Finished read filtration:", str(datetime.now())
+        print "Number of reads filtered out:", len(filtered_reads)
