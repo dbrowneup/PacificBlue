@@ -44,6 +44,8 @@
 
 from PacbioAlignment import PacbioAlignment
 from datetime import datetime
+import matplotlib
+import matplotlib.pyplot as plt
 
 class PacbioMapping:
 
@@ -84,5 +86,15 @@ class PacbioMapping:
             for z in v:
                 if z.queryID in filtered_reads:
                     self.contigToRead[k] = v.remove(z)
+        print "Number of mapping reads filtered out:", len(filtered_reads)
+        print "Number of mapping reads remaining:", len(self.readToContig)
+        print "Number of mapping contigs remaining:", len(self.contigToRead)
         print "Finished read filtration:", str(datetime.now())
-        print "Number of reads filtered out:", len(filtered_reads)
+    def read_mapping_frequency(self, title, bins=30):
+        x_axis = [len(x) for x in self.readToContig.values()]
+        plt.hist(x_axis, bins)
+        plt.xlabel("Alignments per read")
+        plt.ylabel("Number of reads")
+        plt.savefig(title+".png")
+        plt.clf()
+

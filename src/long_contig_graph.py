@@ -85,11 +85,11 @@ class LongContigGraph(Graph):
                 num_singlevertices = 0
                 vertex_list = []
                 edge_list = []
-                for r in mapping_reads[thread_id * batch_size:
-                                       min((thread_id + 1) * batch_size,
-                                           len(mapping_reads))]:
-                    if len(mapping.readToContig[r]) < 2:
-                        continue
+                slice_start = thread_id * batch_size
+                slice_end = min((thread_id + 1) * batch_size, len(mapping_reads))
+                for r in mapping_reads[slice_start:slice_end]:
+#                    if len(mapping.readToContig[r]) < 2:
+#                        continue
                     sg = PacbioSubgraph(r, contigGraph, self.mapping,
                                         map_margin, True, offset_margin,
                                         min_vertex_length)
