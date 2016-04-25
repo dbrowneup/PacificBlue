@@ -65,9 +65,11 @@ class PacbioMapping:
             self.contigToRead[align[1]].append(PacbioAlignment(align))
         print "Number of mapping reads:", len(self.readToContig)
         print "Number of mapping contigs:", len(self.contigToRead)
+        print "Number of alignments:", len(self.alignments)
         #sort readToContig mappings in decreasing order of contig length
         for qID in self.readToContig:
             self.readToContig[qID] = sorted(self.readToContig[qID], key=lambda x: x.seqLen, reverse=True)
+        del self.alignments
         print "Finished loading PacBio mapping:", str(datetime.now())
     def filter_reads(self, length_fraction=0.7):
         #remove all reads with only 1 alignment
@@ -82,13 +84,13 @@ class PacbioMapping:
             elif map_length >= v[0].queryLen * length_fraction:
                 filtered_reads.append(k)
                 del self.readToContig[k]
-        for k,v in self.contigToRead.items():
-            for z in v:
-                if z.queryID in filtered_reads:
-                    self.contigToRead[k] = v.remove(z)
+#        for k,v in self.contigToRead.items():
+#            for z in v:
+#                if z.queryID in filtered_reads:
+#                    self.contigToRead[k] = v.remove(z)
         print "Number of mapping reads filtered out:", len(filtered_reads)
         print "Number of mapping reads remaining:", len(self.readToContig)
-        print "Number of mapping contigs remaining:", len(self.contigToRead)
+#        print "Number of mapping contigs remaining:", len(self.contigToRead)
         print "Finished read filtration:", str(datetime.now())
     def read_mapping_frequency(self, title, bins=30):
         x_axis = [len(x) for x in self.readToContig.values()]
