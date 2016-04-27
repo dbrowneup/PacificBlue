@@ -44,7 +44,7 @@ from PacbioAlignment import PacbioAlignment
 from illumina_graph import Graph
 from illumina_path import IlluminaPath
 from utils import toggleStrand
-
+import numpy as np
 
 class PacbioSubgraph(Graph):
 
@@ -56,21 +56,18 @@ class PacbioSubgraph(Graph):
         self.vertex_mapping = {}  # pacbio mapping corresponding to vertex
         self.map_offset = {}  # relative offset of each edge w.r.t. pacbio
         self.augmented_path = {}
+        self.readArray = self.read_stack(pacbio_id, pacbio_mapping)
         ig = illumina_graph
-
-        dbg_numedges = 0
-
-        for align in pacbio_mapping.readToContig[pacbio_id]:
-            a1 = PacbioAlignment(align)
-            if a1.seqLen < min_vertex_length:
-                continue
-            v1 = ig.vs[ig.get_vid(a1.seqID, a1.seqStrand)]
-            self.add_vertex(v1.vid, v1.conj.vid, v1.length, v1.cov)
-            self.vertex_mapping[v1.vid] = a1
-            v1c = v1.conj
-            self.add_vertex(v1c.vid, v1c.conj.vid, v1c.length, v1c.cov)
-            self.vertex_mapping[v1c.vid] = a1
-
+        qStart = 0
+        qEnd = 0
+        qLength = 0
+        for n in range(len(pacbio_mapping.readToContig[pacbio_id])):
+            qStart = pacbio_mapping.readToContig[pacbio_id][n].qStart
+            qEnd = pacbio_mapping.readToContig[pacbio_id][n].qEnd
+            self.mark_coords(n, qStart, qEnd)
+        self.covArray = self.readArray.sum(axis=0)
+        
+        #OLD CODE
         for i in range(len(pacbio_mapping.readToContig[pacbio_id])):
             for j in range(len(pacbio_mapping.readToContig[pacbio_id])):
                 if j == i:
@@ -113,7 +110,23 @@ class PacbioSubgraph(Graph):
         #print "[" + pacbio_id + "] Num edges: ", dbg_numedges
         if augment:
             self.augment(illumina_graph, offset_margin)
+    
 
+    #NEW CODE (04/27/16 DB)
+    def read_stack(self, pacbio_id, pacbio_mapping):
+        stack_size = len(pacbio_mapping.readToContig[pacbio_id])
+        read_size = pacbio_mapping.readToContig[pacbio_id][0].qLength
+        a = np.zeros((stack_size, read_size))
+        return a
+    def mark_coords(self, n, qStart, qEnd):
+        for i in range(qStart, qEnd):
+            self.readArray[n][i] = 1
+
+
+
+
+
+    #OLD CODE
     def augment(self, illumina_graph, offset_margin):
         dbg_numpaths = 0
         for i in range(len(self.vs)):
