@@ -1,0 +1,3 @@
+04/27/16
+
+-Changing AbstractAlignment.py parameters to match blasr output format (-m) 5.
