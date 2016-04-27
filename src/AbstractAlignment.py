@@ -44,7 +44,7 @@ import sys
 
 
 class AbstractAlignment:
-    def __init__(self, fileFormat="m5", aln):
+    def __init__(self, aln, fileFormat="m4"):
         if fileFormat == "m5":
             self.qName = str(aln[0])
             self.qLength = int(aln[1])
