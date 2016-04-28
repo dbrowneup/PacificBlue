@@ -97,13 +97,13 @@ class PacbioSubgraph(Graph):
             alignment = alignment.remove(n)
 
     def find_overhangs(self, a):
-        if a.qStart > q.tStart and (a.qLength - a.qEnd) < (a.tLength - a.tEnd):
+        if a.qStart > a.tStart and (a.qLength - a.qEnd) < (a.tLength - a.tEnd):
             print "5' overhang"
-        elif a.qStart < q.tStart and (a.qLength - a.qEnd) > (a.tLength - a.tEnd):
+        elif a.qStart < a.tStart and (a.qLength - a.qEnd) > (a.tLength - a.tEnd):
             print "3' overhang"
-        elif a.qStart > q.tStart and (a.qLength - a.qEnd) > (a.tLength - a.tEnd):
+        elif a.qStart > a.tStart and (a.qLength - a.qEnd) > (a.tLength - a.tEnd):
             print "Double overhang"
-        elif a.qStart <= q.tStart and (a.qLength - a.qEnd) <= (a.tLength - a.tEnd):
+        elif a.qStart <= a.tStart and (a.qLength - a.qEnd) <= (a.tLength - a.tEnd):
             print "No overhang"
         else:
             print "Unknown overhang!"
