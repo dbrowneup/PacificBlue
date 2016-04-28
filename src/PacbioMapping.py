@@ -81,7 +81,7 @@ class PacbioMapping:
                 del self.readToContig[k]
         for i in range(len(self.alignments)):
             if self.alignments[i][0] in filtered_reads:
-                self.alignments.remove(self.alignments[i])
+                self.alignments.remove(self.alignments.index(self.alignments[i]))
         print "Number of mapping reads filtered out:", len(filtered_reads)
         print "Number of mapping reads remaining:", len(self.readToContig)
         print "Finished read filtration:", str(datetime.now())
