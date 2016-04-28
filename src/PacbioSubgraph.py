@@ -128,11 +128,13 @@ class PacbioSubgraph(Graph):
             if (tp.tLength - tp.tEnd + fp.tStart) < (fp.qStart - tp.qEnd):
                 print "Read spans gap between scaffolds"
             else:
-                print "Gap between alignments but not scaffold ends"
+                print "Gap between alignments, possible overlap of scaffold ends"
         elif fp.qEnd >= tp.qEnd >= fp.qStart >= tp.qStart:
             if fp.tEnd < (fp.qEnd - tp.qStart) > (fp.tLength - fp.tStart):
                 print "Read spans overlap of scaffold ends"
             else:
                 print "Scaffolds extend beyond alignment overlap"
+        elif tp.qStart > fp.qEnd:
+            print "Gap between inverted alignments, unlikely scaffold overlap"
         else:
             print "Strange alignment behavior"
