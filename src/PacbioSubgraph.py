@@ -40,7 +40,8 @@
 #Author: Viraj Deshpande
 #Contact: vdeshpan@eng.ucsd.edu
 
-from PacbioAlignment import PacbioAlignment
+#Re-written by Dan Browne on 04/27/16
+
 from illumina_graph import Graph
 from illumina_path import IlluminaPath
 from utils import toggleStrand
@@ -48,124 +49,61 @@ import numpy as np
 
 class PacbioSubgraph(Graph):
 
-    def __init__(self, pacbio_id, illumina_graph,
-                 pacbio_mapping, map_margin=0.5,
-                 augment=False, offset_margin=0.1, min_vertex_length=0):
+    def __init__(self, pacbio_id, illumina_graph, pacbio_mapping)
         Graph.__init__(self)
         self.pacbio_id = pacbio_id
-        self.vertex_mapping = {}  # pacbio mapping corresponding to vertex
-        self.map_offset = {}  # relative offset of each edge w.r.t. pacbio
-        self.augmented_path = {}
-        self.readArray = self.read_stack(pacbio_id, pacbio_mapping)
-        ig = illumina_graph
+        #Create array of read aligments by read length
+        self.pacbio_mapping = pacbio_mapping
+        self.readArray = self.read_stack()
         qStart = 0
         qEnd = 0
-        qLength = 0
-        for n in range(len(pacbio_mapping.readToContig[pacbio_id])):
-            qStart = pacbio_mapping.readToContig[pacbio_id][n].qStart
-            qEnd = pacbio_mapping.readToContig[pacbio_id][n].qEnd
+        #Mark coordinates of alignments on read
+        for n in range(len(self.pacbio_mapping.readToContig[pacbio_id])):
+            qStart = self.pacbio_mapping.readToContig[pacbio_id][n].qStart
+            qEnd = self.pacbio_mapping.readToContig[pacbio_id][n].qEnd
             self.mark_coords(n, qStart, qEnd)
+        #Calculate per-base coverage of read
         self.covArray = self.readArray.sum(axis=0)
-        
-        #OLD CODE
-        for i in range(len(pacbio_mapping.readToContig[pacbio_id])):
-            for j in range(len(pacbio_mapping.readToContig[pacbio_id])):
-                if j == i:
-                    continue
-                a1 = PacbioAlignment(pacbio_mapping.
-                                     readToContig[pacbio_id][i])
-                a2 = PacbioAlignment(pacbio_mapping.
-                                     readToContig[pacbio_id][j])
-                if a1.seqLen < min_vertex_length:
-                    continue
-                if a2.seqLen < min_vertex_length:
-                    continue
-                if a2.queryStartPos < a1.queryStartPos:
-                    continue
-                if a1.queryStrand == '+':
-                    s1 = a1.seqStrand
-                else:
-                    s1 = toggleStrand(a1.seqStrand)
-                if a2.queryStrand == '+':
-                    s2 = a2.seqStrand
-                else:
-                    s2 = toggleStrand(a2.seqStrand)
-                if ig.get_vid(a1.seqID, s1) not in self.vs.keys():
-                    continue
-                if ig.get_vid(a2.seqID, s2) not in self.vs.keys():
-                    continue
-
-                for e in ig.vs[ig.get_vid(a1.seqID, s1)].oute:
-                    if e.v2.vid == ig.get_vid(a2.seqID, s2):
-                        if a1.spansEdge(a2, e, offset_margin):
-                            ne = self.add_edge(e.v1.vid, e.v2.vid, e.ovl)
-                            ec = self.add_edge(e.v2.conj.vid,
-                                               e.v1.conj.vid, e.ovl)
-                            self.map_offset[ne] = a1.relative_offset(a2, ne.v1,
-                                                                     ne.v2)
-                            self.map_offset[ec] = a2.relative_offset(a1, ec.v1,
-                                                                     ec.v2)
-                            dbg_numedges += 1
-                            break
-        #print "[" + pacbio_id + "] Num edges: ", dbg_numedges
-        if augment:
-            self.augment(illumina_graph, offset_margin)
-    
-
-    #NEW CODE (04/27/16 DB)
-    def read_stack(self, pacbio_id, pacbio_mapping):
-        stack_size = len(pacbio_mapping.readToContig[pacbio_id])
-        read_size = pacbio_mapping.readToContig[pacbio_id][0].qLength
+        #Filter out alignments in repetitive regions
+        align_coords = set([])
+        repeat_coords = set(self.find_repeats())
+        for n in self.pacbio_mapping.readToContig[pacbio_id]:
+            align_coords = set(range(n.qStart, n.qEnd))
+            self.filter_repeats(align_coords, repeat_coords, n)
+        #Find 5' and 3' read overhangs
+        for n in self.pacbio_mapping.readToContig[pacbio_id]:
+            self.find_overhangs(n)
+    def read_stack(self):
+        stack_size = len(self.pacbio_mapping.readToContig[self.pacbio_id])
+        read_size = self.pacbio_mapping.readToContig[self.pacbio_id][0].qLength
         a = np.zeros((stack_size, read_size))
         return a
+    
     def mark_coords(self, n, qStart, qEnd):
         for i in range(qStart, qEnd):
             self.readArray[n][i] = 1
+    
+    def find_repeats(self, cutoff=3):
+        repeat_coords = []
+        for i in range(len(self.covArray)):
+            if self.covArray[i] > cutoff:
+                repeat_coords.append(i)
+        return repeat_coords
 
+    def filter_repeats(self, align_coords, repeat_coords, n, fraction=0.7):
+        bp_in_repeat = align_coords.intersection(repeat_coords)
+        alignment = self.pacbio_mapping.readToContig[self.pacbio_id]
+        if len(bp_in_repeat) >= fraction*len(align_coords):
+            alignment = alignment.remove(n)
 
-
-
-
-    #OLD CODE
-    def augment(self, illumina_graph, offset_margin):
-        dbg_numpaths = 0
-        for i in range(len(self.vs)):
-            for j in range(len(self.vs)):
-                if i == j:
-                    continue
-                vid1 = self.vs.keys()[i]
-                vid2 = self.vs.keys()[j]
-                if self.vs[vid2] in self.vs[vid1].outv():
-                    continue
-                a1 = self.vertex_mapping[vid1]
-                a2 = self.vertex_mapping[vid2]
-                offset = a1.relative_offset(a2,
-                                            self.vs[vid1], self.vs[vid2])
-                offsetc = a2.relative_offset(a1, self.vs[vid2].conj,
-                                             self.vs[vid1].conj)
-                if offset is False or offset < 0:
-                    continue
-                if offsetc is False or offsetc < 0:
-                    continue
-                min_offset = (1 - offset_margin) * offset
-                max_offset = (1 + offset_margin) * offset
-                if self.find_path(vid1, vid2, min_offset, max_offset):
-                    continue
-                p = illumina_graph.find_path(vid1, vid2,
-                                             min_offset, max_offset)
-                if p is not None and len(p) > 1:
-                    dbg_numpaths += 1
-                    ip = IlluminaPath(p)
-                    if a1.spansEdge(a2, ip, offset_margin):
-                        continue
-                    ne = self.add_edge(ip.v1.vid, ip.v2.vid, ip.ovl)
-                    ec = self.add_edge(ip.v2.conj.vid, ip.v1.conj.vid,
-                                       ip.ovl)
-                    self.map_offset[ne] = a1.relative_offset(a2, ne.v1, ne.v2)
-                    self.map_offset[ec] = a2.relative_offset(a1, ec.v1, ec.v2)
-                    self.augmented_path[ne] = ip
-                    self.augmented_path[ec] = ip.conj()
-        #print "Num paths: ", dbg_numpaths
-        if dbg_numpaths > 0:
-            return True
-        return False
+    def find_overhangs(self, a):
+        if a.qStart > q.tStart and (a.qLength - a.qEnd) < (a.tLength - a.tEnd):
+            print "5' overhang"
+        elif a.qStart < q.tStart and (a.qLength - a.qEnd) > (a.tLength - a.tEnd):
+            print "3' overhang"
+        elif a.qStart > q.tStart and (a.qLength - a.qEnd) > (a.tLength - a.tEnd):
+            print "Double overhang"
+        elif a.qStart <= q.tStart and (a.qLength - a.qEnd) <= (a.tLength - a.tEnd):
+            print "No overhang"
+        else:
+            print "Unknown overhang!"
