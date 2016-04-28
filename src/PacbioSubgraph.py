@@ -138,3 +138,6 @@ class PacbioSubgraph(Graph):
             print "Gap between inverted alignments, unlikely scaffold overlap"
         else:
             print "Strange alignment behavior"
+            print "Alignment coordinates (qStart, qEnd):"
+            print "A1 (%d, %d)" % (tp.qStart, tp.qEnd)
+            print "A2 (%d, %d)" % (fp.qStart, fp.qEnd)
