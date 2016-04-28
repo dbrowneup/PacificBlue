@@ -49,7 +49,7 @@ import numpy as np
 
 class PacbioSubgraph(Graph):
 
-    def __init__(self, pacbio_id, illumina_graph, pacbio_mapping)
+    def __init__(self, pacbio_id, illumina_graph, pacbio_mapping):
         Graph.__init__(self)
         self.pacbio_id = pacbio_id
         #Create array of read aligments by read length
