@@ -79,9 +79,7 @@ class PacbioMapping:
             elif map_length >= v[0].qLength * float(length_fraction):
                 filtered_reads.append(k)
                 del self.readToContig[k]
-        for i in range(len(self.alignments)):
-            if self.alignments[i][0] in filtered_reads:
-                self.alignments.remove(self.alignments.index(self.alignments[i]))
+        self.alignments = [x for x in self.alignments if x[0] not in filtered_reads]
         print "Number of mapping reads filtered out:", len(filtered_reads)
         print "Number of mapping reads remaining:", len(self.readToContig)
         print "Finished read filtration:", str(datetime.now())
