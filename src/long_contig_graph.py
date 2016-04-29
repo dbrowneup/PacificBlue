@@ -8,7 +8,6 @@ import networkx as nx
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-import math
 
 
 class LongContigGraph():
@@ -36,9 +35,9 @@ class LongContigGraph():
                 try:
                     self.graph[v1][v2]['weight'] += (float(1) / len(sg.Connects))
                     self.graph[v1][v2]['dist_estimates'].append(dist)
-                    print "Edge already existed!"
+#                    print "Edge already existed!"
                 except:
                     self.graph.add_edge(v1, v2, {'weight': (float(1) / len(sg.Connects)), 'dist_estimates': [dist]})
-                    print "Created new edge"
+#                    print "Created new edge"
         print "Finishing LongContigGraph:", str(datetime.now())
 
