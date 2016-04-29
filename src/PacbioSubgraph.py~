@@ -1,6 +1,5 @@
 #Re-written by Dan Browne on 04/27/16
 
-
 import numpy as np
 import itertools
 
