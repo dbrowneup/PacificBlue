@@ -41,5 +41,5 @@ class LongContigGraph(Graph):
                         self.graph[v1][v2]['weight'] += (1 / len(sg.Connects))
                         self.graph[v1][v2]['dist_estimates'].append(dist)
                     except:
-                        self.graph.add_edge(v1, v2, {'weight': (1 / len(sg.Connects)), 'dist_estimates': [dist])
+                        self.graph.add_edge(v1, v2, {'weight': (1 / len(sg.Connects)), 'dist_estimates': [dist]})
         parmap(parallel_subgraphs, range(self.num_threads))
