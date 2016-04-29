@@ -84,7 +84,7 @@ class PacbioSubgraph():
         tp, fp = p
         if tp.qEnd < fp.qStart:
             if (tp.tLength - tp.tEnd + fp.tStart) < (fp.qStart - tp.qEnd):
-                print "Read spans gap between scaffolds"
+#                print "Read spans gap between scaffolds"
                 gap_estimate = (fp.qStart - tp.qEnd) - (tp.tLength - tp.tEnd + fp.tStart)
                 return (tp, fp, gap_estimate)
             else:
@@ -111,7 +111,8 @@ class PacbioSubgraph():
 #            print "Gap between inverted alignments, unlikely scaffold overlap"
             return
         else:
-            print "Strange alignment behavior"
-            print "Alignment coordinates (qStart, qEnd):"
-            print "A1 (%d, %d)" % (tp.qStart, tp.qEnd)
-            print "A2 (%d, %d)" % (fp.qStart, fp.qEnd)
+            return
+#            print "Strange alignment behavior"
+#            print "Alignment coordinates (qStart, qEnd):"
+#            print "A1 (%d, %d)" % (tp.qStart, tp.qEnd)
+#            print "A2 (%d, %d)" % (fp.qStart, fp.qEnd)
