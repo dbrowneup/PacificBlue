@@ -39,10 +39,12 @@ class LongContigGraph():
                     dist = x[2]
                     print "v1:", v1, "v2:", v2, "dist:", dist, "weight", 1/len(sg.Connects)
                     try:
-                        self.graph[v1][v2]['weight'] += (1 / len(sg.Connects))
+                        self.graph[v1][v2]['weight'] += (float(1) / len(sg.Connects))
                         self.graph[v1][v2]['dist_estimates'].append(dist)
                         print "Edge already existed!"
+                        return
                     except:
-                        self.graph.add_edge(v1, v2, {'weight': (1 / len(sg.Connects)), 'dist_estimates': [dist]})
+                        self.graph.add_edge(v1, v2, {'weight': (float(1) / len(sg.Connects)), 'dist_estimates': [dist]})
                         print "Created new edge"
+                        return
         parmap(parallel_subgraphs, range(self.num_threads))
