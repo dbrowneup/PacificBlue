@@ -6,3 +6,8 @@
 04/28/16
 
 -Developing test for connections between overhangs in PacbioSubgraph.py
+
+04/29/16
+
+-Beginning to implement changes in long_contig_graph
+-Writing in support for networkx, will deprecate custom graph classes

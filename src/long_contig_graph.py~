@@ -42,8 +42,11 @@
 
 from illumina_graph import Graph
 from PacbioSubgraph import PacbioSubgraph
-from PacbioAlignment import PacbioAlignment
 from utils import toggleStrand, parmap
+import networkx as nx
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
 
 from sets import Set
 import math
@@ -87,7 +90,7 @@ class LongContigGraph(Graph):
                 edge_list = []
                 slice_start = thread_id * batch_size
                 slice_end = min((thread_id + 1) * batch_size, len(mapping_reads))
-                for r in mapping_reads[slice_start:slice_end]
+                for r in mapping_reads[slice_start:slice_end]:
 #                    if len(mapping.readToContig[r]) < 2:
 #                        continue
                     sg = PacbioSubgraph(r, contigGraph, self.mapping,

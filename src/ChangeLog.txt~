@@ -2,3 +2,7 @@
 
 -Changing AbstractAlignment.py parameters to match blasr output format (-m) 5.
 -Writing read_stack, readArray, etc. into PacbioSubgraph.py
+
+04/28/16
+
+-Developing test for connections between overhangs in PacbioSubgraph.py
