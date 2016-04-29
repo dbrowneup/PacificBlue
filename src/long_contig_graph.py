@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import math
 
 
-class LongContigGraph(Graph):
+class LongContigGraph():
 
     def __init__(self, FastaFile, PacbioMapping, num_threads=1):
         self.graph = nx.Graph()
