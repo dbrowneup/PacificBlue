@@ -12,7 +12,7 @@ class PacbioMapping:
         self.readToContig = {}
         self.alignments = open(fileName, "rU").read().split('\n') # reads alignments
         self.alignments = self.alignments[1:-1] if "score" in self.alignments[0] else self.alignments[0:-1] # discards empty last row and first row if header is detected
-        self.alignments = [AbstractAlignment(x.split(' '), fileFormat) for x in self.alignments] # parses alignments into AbstractAlignment objects
+        self.alignments = set([AbstractAlignment(x.split(' '), fileFormat) for x in self.alignments]) # parses alignments into AbstractAlignment objects
         self.readToContig = {x.qName: [] for x in self.alignments if x.qName not in self.readToContig} # parses qNames into dictionary
         #parse alignments into dictionary
         for x in self.alignments:
