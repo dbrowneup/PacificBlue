@@ -100,7 +100,7 @@ class PacbioSubgraph():
                 print "Alignment coordinates (qStart, qEnd):"
                 print "A1 (%d, %d)" % (tp.qStart, tp.qEnd)
                 print "A2 (%d, %d)" % (fp.qStart, fp.qEnd)
-        elif fp.qEnd >= tp.qEnd >= fp.qStart >= tp.qStart:
+        elif fp.qEnd >= tp.qEnd > fp.qStart >= tp.qStart:
             if fp.tEnd < (fp.qEnd - tp.qStart) > (fp.tLength - fp.tStart):
 #                return
 #                print "Read spans overlap of scaffold ends"
@@ -109,6 +109,9 @@ class PacbioSubgraph():
             else:
                 return
 #                print "Scaffolds extend beyond alignment boundaries"
+        elif tp.qEnd >= fp.qEnd > tp.qStart >= fp.qStart:
+#            print "Inversion of expected alignment orientation"
+            return
         elif fp.qEnd >= tp.qEnd > tp.qStart >= fp.qStart:
 #            print "A1 contained within A2"
             return
