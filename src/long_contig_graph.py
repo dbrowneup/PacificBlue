@@ -31,7 +31,7 @@ class LongContigGraph():
                 v1 = -1 * x[0].tName if x[0].tStrand == 1 else x[0].tName
                 v2 = -1 * x[1].tName if x[1].tStrand == 1 else x[1].tName
                 dist = x[2]
-                print "v1:", v1, "v2:", v2, "dist:", dist, "weight", float(1)/len(sg.Connects)
+#                print "v1:", v1, "v2:", v2, "dist:", dist, "weight", float(1)/len(sg.Connects)
                 try:
                     self.graph[v1][v2]['weight'] += (float(1) / len(sg.Connects))
                     self.graph[v1][v2]['dist_estimates'].append(dist)

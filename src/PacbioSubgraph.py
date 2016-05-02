@@ -6,7 +6,7 @@ import itertools
 
 class PacbioSubgraph():
 
-    def __init__(self, pacbio_id, pacbio_mapping):
+    def __init__(self, pacbio_id, pacbio_mapping, cov_cutoff=3):
         self.pacbio_id = pacbio_id
         self.FivePOvhg = []
         self.ThrePOvhg = []
@@ -26,7 +26,7 @@ class PacbioSubgraph():
 #        print "Total coverage of read:", self.covArray.sum()
         #Filter out alignments in repetitive regions
         align_coords = set([])
-        repeat_coords = set(self.find_repeats())
+        repeat_coords = set(self.find_repeats(cov_cutoff))
         for n in self.pacbio_mapping.readToContig[pacbio_id]:
             align_coords = set(range(n.qStart, n.qEnd))
             self.filter_repeats(align_coords, repeat_coords, n)
@@ -49,7 +49,7 @@ class PacbioSubgraph():
         for i in range(qStart, qEnd):
             self.readArray[n][i] = 1
     
-    def find_repeats(self, cutoff=3):
+    def find_repeats(self, cutoff):
         repeat_coords = []
         for i in range(len(self.covArray)):
             if self.covArray[i] > cutoff:
@@ -83,21 +83,29 @@ class PacbioSubgraph():
     def test_connect(self, p):
         tp, fp = p
         if tp.qEnd < fp.qStart:
-            if (tp.tLength - tp.tEnd + fp.tStart) < (fp.qStart - tp.qEnd):
+            if (fp.qEnd - tp.qStart) > (tp.tLength - tp.tEnd + fp.tStart) < (fp.qStart - tp.qEnd):
 #                print "Read spans gap between scaffolds"
                 gap_estimate = (fp.qStart - tp.qEnd) - (tp.tLength - tp.tEnd + fp.tStart)
                 return (tp, fp, gap_estimate)
-            else:
-                return
+            elif (fp.qEnd - tp.qStart) > (tp.tLength - tp.tEnd + fp.tStart) > (fp.tStart - tp.qEnd):
+#                return
 #                print "Gap between alignments, possible overlap of scaffold ends"
 #                overlap_estimate = (fp.qStart - tp.qEnd) - (tp.tLength - tp.tEnd + fp.tStart)
-#                return (tp, fp, overlap_estimate)
+                return (tp, fp, overlap_estimate)
+            elif (fp.qEnd - tp.qStart) < (tp.tLength - tp.tEnd + fp.tStart) > (fp.tStart - tp.qEnd):
+                return
+#                print "Scaffold ends extend past alignment boundaries"
+            else:
+                print "Unknown alignment condition!"
+                print "Alignment coordinates (qStart, qEnd):"
+                print "A1 (%d, %d)" % (tp.qStart, tp.qEnd)
+                print "A2 (%d, %d)" % (fp.qStart, fp.qEnd)
         elif fp.qEnd >= tp.qEnd >= fp.qStart >= tp.qStart:
             if fp.tEnd < (fp.qEnd - tp.qStart) > (fp.tLength - fp.tStart):
-                return
+#                return
 #                print "Read spans overlap of scaffold ends"
 #                overlap_estimate = (fp.qEnd - tp.qStart) - (fp.tLength - fp.tStart + fp.tEnd)
-#                return (tp, fp, overlap_estimate)
+                return (tp, fp, overlap_estimate)
             else:
                 return
 #                print "Scaffolds extend beyond alignment boundaries"
@@ -111,8 +119,8 @@ class PacbioSubgraph():
 #            print "Gap between inverted alignments, unlikely scaffold overlap"
             return
         else:
-            return
-#            print "Strange alignment behavior"
-#            print "Alignment coordinates (qStart, qEnd):"
-#            print "A1 (%d, %d)" % (tp.qStart, tp.qEnd)
-#            print "A2 (%d, %d)" % (fp.qStart, fp.qEnd)
+#            return
+            print "Unknown alignment condition!"
+            print "Alignment coordinates (qStart, qEnd):"
+            print "A1 (%d, %d)" % (tp.qStart, tp.qEnd)
+            print "A2 (%d, %d)" % (fp.qStart, fp.qEnd)
