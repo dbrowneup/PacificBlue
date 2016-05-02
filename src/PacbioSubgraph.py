@@ -90,7 +90,7 @@ class PacbioSubgraph():
             elif (fp.qEnd - tp.qStart) > (tp.tLength - tp.tEnd + fp.tStart) > (fp.tStart - tp.qEnd):
 #                return
 #                print "Gap between alignments, possible overlap of scaffold ends"
-#                overlap_estimate = (fp.qStart - tp.qEnd) - (tp.tLength - tp.tEnd + fp.tStart)
+                overlap_estimate = (fp.qStart - tp.qEnd) - (tp.tLength - tp.tEnd + fp.tStart)
                 return (tp, fp, overlap_estimate)
             elif (fp.qEnd - tp.qStart) < (tp.tLength - tp.tEnd + fp.tStart) > (fp.tStart - tp.qEnd):
                 return
@@ -104,7 +104,7 @@ class PacbioSubgraph():
             if fp.tEnd < (fp.qEnd - tp.qStart) > (fp.tLength - fp.tStart):
 #                return
 #                print "Read spans overlap of scaffold ends"
-#                overlap_estimate = (fp.qEnd - tp.qStart) - (fp.tLength - fp.tStart + fp.tEnd)
+                overlap_estimate = (fp.qEnd - tp.qStart) - (fp.tLength - fp.tStart + fp.tEnd)
                 return (tp, fp, overlap_estimate)
             else:
                 return
