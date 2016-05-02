@@ -20,14 +20,14 @@ class PacbioSubgraph():
         for n in range(len(self.pacbio_mapping.readToContig[pacbio_id])):
             qStart = self.pacbio_mapping.readToContig[pacbio_id][n].qStart
             qEnd = self.pacbio_mapping.readToContig[pacbio_id][n].qEnd
-            self.mark_coords(n, qStart, qEnd+1)
+            self.mark_coords(n, qStart, qEnd)
         #Calculate per-base coverage of read
         self.covArray = self.readArray.sum(axis=0)
         #Filter out alignments in repetitive regions
         align_coords = set([])
         repeat_coords = set(self.find_repeats(cov_cutoff))
         for n in self.pacbio_mapping.readToContig[pacbio_id]:
-            align_coords = set(range(n.qStart, n.qEnd+1))
+            align_coords = set(range(n.qStart, n.qEnd))
             self.filter_repeats(align_coords, repeat_coords, n)
         #Find 5' and 3' overhangs
         for n in self.pacbio_mapping.readToContig[pacbio_id]:
