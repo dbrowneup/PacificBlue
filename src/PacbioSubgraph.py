@@ -20,15 +20,14 @@ class PacbioSubgraph():
         for n in range(len(self.pacbio_mapping.readToContig[pacbio_id])):
             qStart = self.pacbio_mapping.readToContig[pacbio_id][n].qStart
             qEnd = self.pacbio_mapping.readToContig[pacbio_id][n].qEnd
-            self.mark_coords(n, qStart, qEnd)
+            self.mark_coords(n, qStart, qEnd+1)
         #Calculate per-base coverage of read
         self.covArray = self.readArray.sum(axis=0)
-#        print "Total coverage of read:", self.covArray.sum()
         #Filter out alignments in repetitive regions
         align_coords = set([])
         repeat_coords = set(self.find_repeats(cov_cutoff))
         for n in self.pacbio_mapping.readToContig[pacbio_id]:
-            align_coords = set(range(n.qStart, n.qEnd))
+            align_coords = set(range(n.qStart, n.qEnd+1))
             self.filter_repeats(align_coords, repeat_coords, n)
         #Find 5' and 3' overhangs
         for n in self.pacbio_mapping.readToContig[pacbio_id]:
@@ -82,7 +81,7 @@ class PacbioSubgraph():
     
     def test_connect(self, p):
         tp, fp = p
-        if tp.qEnd < fp.qStart:
+        if tp.qEnd <= fp.qStart:
             if (fp.qEnd - tp.qStart) > (tp.tLength - tp.tEnd + fp.tStart) < (fp.qStart - tp.qEnd):
 #                print "Read spans gap between scaffolds"
                 gap_estimate = (fp.qStart - tp.qEnd) - (tp.tLength - tp.tEnd + fp.tStart)
@@ -118,7 +117,7 @@ class PacbioSubgraph():
         elif tp.qEnd >= fp.qEnd > fp.qStart >= tp.qStart:
 #            print "A2 contained within A1"
             return
-        elif tp.qStart > fp.qEnd:
+        elif tp.qStart >= fp.qEnd:
 #            print "Gap between inverted alignments, unlikely scaffold overlap"
             return
         else:
