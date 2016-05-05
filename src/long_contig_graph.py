@@ -14,7 +14,7 @@ class LongContigGraph():
 
     def __init__(self, FastaFile, PacbioMapping, num_threads=1):
         print "Beginning LongContigGraph:", str(datetime.now())
-        self.graph = nx.Graph()
+        self.graph = nx.DiGraph()
         self.mapping = PacbioMapping
         self.num_threads = num_threads
         #Parse fasta sequences into graph as nodes
