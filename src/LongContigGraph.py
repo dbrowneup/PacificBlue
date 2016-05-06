@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 class LongContigGraph():
 
-    def __init__(self, FastaFile, PacbioMapping, edge_cutoff=(float(1) / 2)):
+    def __init__(self, FastaFile, PacbioMapping, edge_cutoff=(float(1) / 4)):
         print "Beginning LongContigGraph:", str(datetime.now())
         self.graph = nx.DiGraph()
         self.mapping = PacbioMapping
@@ -63,7 +63,7 @@ class LongContigGraph():
         if len(credible_attr) == 0:
             self.graph.remove_edge(v1, v2)
         wt, de = zip(*credible_attr)
-        if sum(wt) < 3:
+        if sum(wt) < 1:
             self.graph.remove_edge(v1, v2)
         de = np.array(de)
         if (max(de) - min(de)) > abs(de.mean()):
