@@ -11,3 +11,8 @@
 
 -Beginning to implement changes in long_contig_graph
 -Writing in support for networkx, will deprecate custom graph classes
+
+05/06/16
+
+-Adding graph processing features to long_contig_graph
+-Renaming long_contig_graph to LongContigGraph
