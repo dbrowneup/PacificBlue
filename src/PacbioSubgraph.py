@@ -14,13 +14,11 @@ class PacbioSubgraph():
         #Create array of read aligments by read length
         self.mapping = pacbio_mapping
         self.readArray = self.read_stack()
-        qStart = 0
-        qEnd = 0
         #Mark coordinates of alignments on read
-        for n in range(len(self.mapping.readToContig[pacbio_id])):
-            qStart = self.mapping.readToContig[pacbio_id][n].qStart
-            qEnd = self.mapping.readToContig[pacbio_id][n].qEnd
-            self.mark_coords(n, qStart, qEnd)
+        stack_index = 0
+        for n in self.mapping.readToContig[pacbio_id]:
+            self.mark_coords(stack_index, n.qStart, n.qEnd)
+            stack_index += 1
         #Calculate per-base coverage of read
         self.covArray = self.readArray.sum(axis=0)
         #Filter out alignments in repetitive regions
@@ -39,9 +37,8 @@ class PacbioSubgraph():
     
     def read_stack(self):
         stack_size = len(self.mapping.readToContig[self.pacbio_id])
-        read_size = self.mapping.readToContig[self.pacbio_id][0].qLength
+        read_size = next(iter(self.mapping.readToContig[self.pacbio_id])).qLength
         a = np.zeros((stack_size, read_size))
-#        print "Shape of array:", np.shape(a)
         return a
     
     def mark_coords(self, n, qStart, qEnd):
@@ -53,13 +50,12 @@ class PacbioSubgraph():
         for i in range(len(self.covArray)):
             if self.covArray[i] > cutoff:
                 repeat_coords.append(i)
-#        print str(len(repeat_coords))+" repetitive bps"
         return repeat_coords
 
     def filter_repeats(self, align_coords, repeat_coords, n, fraction=0.5):
         bp_in_repeat = align_coords.intersection(repeat_coords)
         if len(bp_in_repeat) >= (fraction * len(align_coords)):
-            self.mapping.readToContig[self.pacbio_id] = self.mapping.readToContig[self.pacbio_id].remove(n)
+            self.mapping.readToContig[self.pacbio_id].discard(n)
 
     def find_overhangs(self, a):
         if a.qStart > a.tStart and (a.qLength - a.qEnd) < (a.tLength - a.tEnd):
@@ -75,8 +71,7 @@ class PacbioSubgraph():
 #            print "No overhang"
             return
         else:
-#            print "Unknown overhang!"
-            return
+            print "Unknown overhang!"
     
     def test_connect(self, p):
         tp, fp = p

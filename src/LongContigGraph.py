@@ -62,9 +62,11 @@ class LongContigGraph():
                 credible_attr.append(a)
         if len(credible_attr) == 0:
             self.graph.remove_edge(v1, v2)
+            return
         wt, de = zip(*credible_attr)
         if sum(wt) < 1:
             self.graph.remove_edge(v1, v2)
+            return
         de = np.array(de)
         if (max(de) - min(de)) > abs(de.mean()):
             self.graph.remove_edge(v1, v2)
