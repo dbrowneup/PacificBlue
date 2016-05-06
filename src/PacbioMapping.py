@@ -23,7 +23,7 @@ class PacbioMapping:
         self.filter_reads()
         print "Finished loading PacBio mapping:", str(datetime.now())
 
-    def filter_reads(self, length_fraction):
+    def filter_reads(self):
         filtered_reads = set([])
         for k,v in self.readToContig.items():
             if len(v) == 1:
