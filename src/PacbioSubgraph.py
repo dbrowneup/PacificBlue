@@ -24,7 +24,7 @@ class PacbioSubgraph():
         #Filter out alignments in repetitive regions
         repeat_coords = set(self.find_repeats(cov_cutoff))
         alignments = self.mapping.readToContig[pacbio_id]
-        self.mapping.readToContig[pacbio_id] = set([n for n in alignments if not filter_repeat(repeat_coords, n)])
+        self.mapping.readToContig[pacbio_id] = set([n for n in alignments if not self.filter_repeat(repeat_coords, n)])
         #Find 5' and 3' overhangs
         for n in self.mapping.readToContig[pacbio_id]:
             self.find_overhangs(n)
