@@ -25,6 +25,7 @@ class LongContigGraph():
         #Process alignments
         for r in self.mapping.readToContig.keys():
             sg = PacbioSubgraph(r, self.mapping)
+            self.mapping.readToContig[r] = sg.mapping.readToContig[r]
             if len(sg.Connects) == 0:
                 continue
             for x in sg.Connects:

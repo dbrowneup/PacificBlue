@@ -82,32 +82,27 @@ class PacbioSubgraph():
     def test_connect(self, p):
         tp, fp = p
         if tp.qEnd <= fp.qStart:
-            if (fp.qEnd - tp.qStart) > (tp.tLength - tp.tEnd + fp.tStart) < (fp.qStart - tp.qEnd):
-#                print "Read spans gap between scaffolds"
+            if (fp.qEnd - tp.qStart) > (tp.tLength - tp.tEnd + fp.tStart) <= (fp.qStart - tp.qEnd):
+#                print "Read spans gap between scaffolds or connects blunt ends"
                 gap_estimate = (fp.qStart - tp.qEnd) - (tp.tLength - tp.tEnd + fp.tStart)
                 return (tp, fp, gap_estimate)
-            elif (fp.qEnd - tp.qStart) > (tp.tLength - tp.tEnd + fp.tStart) > (fp.tStart - tp.qEnd):
-#                return
+            elif (fp.qEnd - tp.qStart) > (tp.tLength - tp.tEnd + fp.tStart) > (fp.qStart - tp.qEnd):
 #                print "Gap between alignments, possible overlap of scaffold ends"
                 overlap_estimate = (fp.qStart - tp.qEnd) - (tp.tLength - tp.tEnd + fp.tStart)
                 return (tp, fp, overlap_estimate)
-            elif (fp.qEnd - tp.qStart) < (tp.tLength - tp.tEnd + fp.tStart) > (fp.tStart - tp.qEnd):
-                return
+            elif (fp.qEnd - tp.qStart) < (tp.tLength - tp.tEnd + fp.tStart) > (fp.qStart - tp.qEnd):
 #                print "Scaffold ends extend past alignment boundaries"
+                return
             else:
-                print "Unknown alignment condition!"
-                print "Alignment coordinates (qStart, qEnd):"
-                print "A1 (%d, %d)" % (tp.qStart, tp.qEnd)
-                print "A2 (%d, %d)" % (fp.qStart, fp.qEnd)
+                print "Unknown alignment condition 1!"
         elif fp.qEnd >= tp.qEnd > fp.qStart >= tp.qStart:
             if fp.tEnd < (fp.qEnd - tp.qStart) > (fp.tLength - fp.tStart):
-#                return
 #                print "Read spans overlap of scaffold ends"
                 overlap_estimate = (fp.qEnd - tp.qStart) - (fp.tLength - fp.tStart + fp.tEnd)
                 return (tp, fp, overlap_estimate)
             else:
-                return
 #                print "Scaffolds extend beyond alignment boundaries"
+                return
         elif tp.qEnd >= fp.qEnd > tp.qStart >= fp.qStart:
 #            print "Inversion of expected alignment orientation"
             return
@@ -122,7 +117,5 @@ class PacbioSubgraph():
             return
         else:
 #            return
-            print "Unknown alignment condition!"
-            print "Alignment coordinates (qStart, qEnd):"
-            print "A1 (%d, %d)" % (tp.qStart, tp.qEnd)
-            print "A2 (%d, %d)" % (fp.qStart, fp.qEnd)
+            print "Unknown alignment condition 2!"
+
