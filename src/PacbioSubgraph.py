@@ -22,11 +22,9 @@ class PacbioSubgraph():
         #Calculate per-base coverage of read
         self.covArray = self.readArray.sum(axis=0)
         #Filter out alignments in repetitive regions
-        align_coords = set([])
         repeat_coords = set(self.find_repeats(cov_cutoff))
-        for n in self.mapping.readToContig[pacbio_id]:
-            align_coords = set(range(n.qStart, n.qEnd))
-            self.filter_repeats(align_coords, repeat_coords, n)
+        alignments = self.mapping.readToContig[pacbio_id]
+        self.mapping.readToContig[pacbio_id] = set([n for n in alignments if not filter_repeat(repeat_coords, n)])
         #Find 5' and 3' overhangs
         for n in self.mapping.readToContig[pacbio_id]:
             self.find_overhangs(n)
@@ -52,10 +50,11 @@ class PacbioSubgraph():
                 repeat_coords.append(i)
         return repeat_coords
 
-    def filter_repeats(self, align_coords, repeat_coords, n, fraction=0.5):
+    def filter_repeat(self, repeat_coords, n, fraction=0.5):
+        align_coords = set(range(n.qStart, n.qEnd))
         bp_in_repeat = align_coords.intersection(repeat_coords)
         if len(bp_in_repeat) >= (fraction * len(align_coords)):
-            self.mapping.readToContig[self.pacbio_id].discard(n)
+            return True
 
     def find_overhangs(self, a):
         if a.qStart > a.tStart and (a.qLength - a.qEnd) < (a.tLength - a.tEnd):

@@ -84,7 +84,7 @@ class LongContigGraph():
         for v1, v2 in self.graph.out_edges(n):
             e_wt = self.graph[v1][v2]['weights']
             if e_wt < out_wt.mean():
-                self.graph.remove_edges(v1, v2)
+                self.graph.remove_edge(v1, v2)
     
     def filter_branches(self, n):
         if len(self.graph.in_edges(n)) > 1:
