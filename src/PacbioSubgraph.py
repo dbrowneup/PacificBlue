@@ -63,11 +63,11 @@ class PacbioSubgraph():
         elif a.qStart < a.tStart and (a.qLength - a.qEnd) > (a.tLength - a.tEnd):
 #            print "3' overhang"
             self.ThrePOvhg.append(a)
-        elif a.qStart > a.tStart and (a.qLength - a.qEnd) > (a.tLength - a.tEnd):
-#            print "Double overhang"
+        elif a.qStart >= a.tStart and (a.qLength - a.qEnd) >= (a.tLength - a.tEnd):
+#            print "Double overhang or blunt"
             return
         elif a.qStart <= a.tStart and (a.qLength - a.qEnd) <= (a.tLength - a.tEnd):
-#            print "No overhang"
+#            print "No overhang or blunt"
             return
         else:
             print "Unknown overhang!"
@@ -83,7 +83,7 @@ class PacbioSubgraph():
 #                print "Gap between alignments, possible overlap of scaffold ends"
                 overlap_estimate = (fp.qStart - tp.qEnd) - (tp.tLength - tp.tEnd + fp.tStart)
                 return (tp, fp, overlap_estimate)
-            elif (fp.qEnd - tp.qStart) < (tp.tLength - tp.tEnd + fp.tStart) > (fp.qStart - tp.qEnd):
+            elif (fp.qEnd - tp.qStart) <= (tp.tLength - tp.tEnd + fp.tStart) > (fp.qStart - tp.qEnd):
 #                print "Scaffold ends extend past alignment boundaries"
                 return
             else:
