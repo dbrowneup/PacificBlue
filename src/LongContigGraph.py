@@ -4,15 +4,18 @@ from PacbioSubgraph import PacbioSubgraph
 from pyfaidx import Fasta
 from datetime import datetime
 from string import maketrans
+from multiprocessing import Pool
 import networkx as nx
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
+def UnwrapParallelSubgraph(arg, **kwarg):
+    return LongContigGraph.ParallelSubgraph(*arg, **kwarg)
 
 class LongContigGraph():
 
-    def __init__(self, FastaFile, PacbioMapping, edge_cutoff=(float(1) / 4)):
+    def __init__(self, FastaFile, PacbioMapping, num_threads=4, edge_cutoff=(float(1) / 4)):
         print "Beginning LongContigGraph:", str(datetime.now())
         self.graph = nx.DiGraph()
         self.mapping = PacbioMapping
@@ -21,17 +24,16 @@ class LongContigGraph():
         for x in seqs:
             self.graph.add_node(int(x.name), seq=str(x))
             self.graph.add_node(-1 * int(x.name), seq=self.revc(str(x)))
-        #Process alignments
-        for r in self.mapping.readToContig.keys():
-            sg = PacbioSubgraph(r, self.mapping)
-            self.mapping.readToContig[r] = sg.mapping.readToContig[r]
-            if len(sg.Connects) == 0:
-                continue
-            for a1, a2, d in sg.Connects:
-                v1 = -1 * a1.tName if a1.tStrand == 1 else a1.tName
-                v2 = -1 * a2.tName if a2.tStrand == 1 else a2.tName
-                n = len(sg.Connects)
-                self.set_edge(v1, v2, d, n)
+        #Process alignments in parallel
+        sg_pool = Pool(processes=num_threads)
+        reads = self.mapping.readToContig.keys()
+        connections = sg_pool.map(func=UnwrapParallelSubgraph, iterable=zip([self]*len(reads), reads), chunksize=num_threads)
+        print "Size of connections:", len(connections)
+        connections = [c for c in connections if c is not None]
+        for c in connections:
+            print c
+            v2, v2, d, n = c
+            self.set_edge(v1, v2, d, n)
         #Filter noisy edges
         for v1, v2 in self.graph.edges():
             attr = zip(self.graph[v1][v2]['weights'], self.graph[v1][v2]['dist_estimates'])
@@ -43,6 +45,19 @@ class LongContigGraph():
         for n in self.graph:
             self.filter_branches(n)
         print "Finishing LongContigGraph:", str(datetime.now())
+    
+    def ParallelSubgraph(self, read):
+        sg = PacbioSubgraph(read, self.mapping)
+        self.mapping.readToContig[read] = sg.mapping.readToContig[read]
+        if len(sg.Connects) == 0:
+            return
+        reported_connects = []
+        for a1, a2, d in sg.Connects:
+            v1 = -1 * a1.tName if a1.tStrand == 1 else a1.tName
+            v2 = -1 * a2.tName if a2.tStrand == 1 else a2.tName
+            n = len(sg.Connects)
+            reported_connects.append((v1, v2, n, d))
+        return reported_connects
     
     def revc(self, seq):
         tr = maketrans('ATGCatgc', 'TACGtacg')
