@@ -31,11 +31,13 @@ class LongContigGraph():
         #Process alignments in parallel
         print "Processing read alignments in parallel"
         print "Number of threads to use:", num_threads
-        sg_pool = Pool(processes=num_threads)
+        sg_pool = Pool(processes=num_threads, maxtasksperchild=1000)
         reads = self.mapping.readToContig.keys()
         chunk = int(ceil(float(len(reads))/num_threads))
         connection_lists = sg_pool.map(func=UnwrapParallelSubgraph, iterable=zip([self]*len(reads), reads), chunksize=chunk)
         connection_lists = [clist for clist in connection_lists if clist is not None]
+        sg_pool.close()
+        sg_pool.join()
         print "Done processing read alignments, now setting edges"
         for clist in connection_lists:
             for connect in clist:
