@@ -22,30 +22,46 @@ class LongContigGraph():
         self.graph = nx.DiGraph()
         self.mapping = PacbioMapping
         #Parse fasta sequences into graph as nodes
+        print "Adding nodes to graph"
         seqs = Fasta(FastaFile)
         for x in seqs:
             self.graph.add_node(int(x.name), seq=str(x))
             self.graph.add_node(-1 * int(x.name), seq=self.revc(str(x)))
+        print "Nodes in graph:", len(self.graph.nodes())
         #Process alignments in parallel
+        print "Processing read alignments in parallel"
+        print "Number of threads to use:", num_threads
         sg_pool = Pool(processes=num_threads)
         reads = self.mapping.readToContig.keys()
         chunk = int(ceil(float(len(reads))/num_threads))
         connection_lists = sg_pool.map(func=UnwrapParallelSubgraph, iterable=zip([self]*len(reads), reads), chunksize=chunk)
         connection_lists = [clist for clist in connection_lists if clist is not None]
+        print "Done processing read alignments, now setting edges"
         for clist in connection_lists:
             for connect in clist:
                 v1, v2, d, n = connect
                 self.set_edge(v1, v2, d, n)
+        print "Number of unfiltered edges:", len(self.graph.edges())
+        self.degree_counter()
         #Filter noisy edges
+        print "Removing noisy edges"
         for v1, v2 in self.graph.edges():
             attr = zip(self.graph[v1][v2]['weights'], self.graph[v1][v2]['dist_estimates'])
             self.test_edge(v1, v2, attr, edge_cutoff)
+        print "Number of edges after noisy edge removal:", len(self.graph.edges())
+        self.degree_counter()
         #Filter weak edges from noisy nodes
+        print "Removing weak edges"
         for n in self.graph:
             self.weak_edges(n)
+        print "Number of edges after weak edge removal:", len(self.graph.edges())
+        self.degree_counter()
         #Filter edges from branching nodes
+        print "Removing branching edges"
         for n in self.graph:
             self.filter_branches(n)
+        print "Number of edges after branch removal:", len(self.graph.edges())
+        self.degree_counter()
         print "Finishing LongContigGraph:", str(datetime.now())
     
     def ParallelSubgraph(self, read):
@@ -53,13 +69,13 @@ class LongContigGraph():
         self.mapping.readToContig[read] = sg.mapping.readToContig[read]
         if len(sg.Connects) == 0:
             return
-        reported_connects = []
+        n = len(sg.Connects)
+        report = []
         for a1, a2, d in sg.Connects:
             v1 = -1 * a1.tName if a1.tStrand == 1 else a1.tName
             v2 = -1 * a2.tName if a2.tStrand == 1 else a2.tName
-            n = len(sg.Connects)
-            reported_connects.append((v1, v2, d, n))
-        return reported_connects
+            report.append((v1, v2, d, n))
+        return report
     
     def revc(self, seq):
         tr = maketrans('ATGCatgc', 'TACGtacg')
@@ -72,6 +88,17 @@ class LongContigGraph():
         except:
             self.graph.add_edge(v1, v2, {'weights': [float(1) / n], 'dist_estimates': [d]})
 
+    def degree_counter(self):
+        deg = self.graph.degree().values()
+        deg0 = deg.count(0)
+        deg1 = deg.count(1)
+        deg2 = deg.count(2)
+        deg3 = deg.count(3)
+        deg4 = deg.count(4)
+        deg5 = len(deg) - (deg0 + deg1 + deg2 + deg3 + deg4)
+        print "Degree Frequency:"
+        print "0:{0} 1:{1} 2:{2} 3:{3} 4:{4} 5+:{5}".format(deg0, deg1, deg2, deg3, deg4, deg5)
+    
     def test_edge(self, v1, v2, attr, edge_cutoff):
         credible_attr = []
         for a in attr:
