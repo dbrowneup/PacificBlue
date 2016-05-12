@@ -10,6 +10,7 @@ import sys
 class PathFinder():
     
     def __init__(self, scaffold_graph):
+        print "Entering PathFinder module:", str(datetime.now())
         self.G = scaffold_graph
         #Build strandless list of sequences
         sequences = set([x for x in self.G.nodes() if x > 0])
@@ -17,6 +18,8 @@ class PathFinder():
         component_graphs = set([x for x in nx.weakly_connected_component_subgraphs(self.G)])
         single_node_graphs = set([x for x in component_graphs if len(x.nodes()) == 1])
         multi_node_graphs = set([x for x in component_graphs if len(x.nodes()) > 1])
+        print "Number of single-node graphs:", len(single_node_graphs)
+        print "Number of multi-node graphs:", len(multi_node_graphs)
         #Define paths in multi-node graphs
         seqs_in_multi_node_paths = set([])
         multi_node_paths = [nx.dag_longest_path(x) for x in multi_node_graphs]
@@ -31,7 +34,12 @@ class PathFinder():
         for g in multi_node_graphs:
             self.build_scaffold(g)
         #Add single node seqs to scaffolds list
-
+        for g in single_node_graphs:
+            seq = g[g.nodes()[0]]['seq']
+            self.scaffolds.append(seq)
+        
+        print "Leaving PathFinder module:", str(datetime.now())
+    
     def build_scaffold(self, graph):
         scaffold_order = []
         scaffold_seq = ''
