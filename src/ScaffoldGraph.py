@@ -1,26 +1,19 @@
 #Re-written by Dan Browne on 04/29/16
 
-from PacbioSubgraph import PacbioSubgraph
 from pyfaidx import Fasta
 from datetime import datetime
 from string import maketrans
-from multiprocessing import Pool
-from math import ceil
 import networkx as nx
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 
-#A million thanks for this hack, found here: http://www.rueckstiess.net/research/snippets/show/ca1d7d90
-def UnwrapParallelSubgraph(arg, **kwarg):
-    return LongContigGraph.ParallelSubgraph(*arg, **kwarg)
 
-class LongContigGraph():
+class ScaffoldGraph():
 
-    def __init__(self, FastaFile, PacbioMapping, num_threads=4, edge_cutoff=(float(1) / 4)):
+    def __init__(self, FastaFile, ConnectionLists, edge_cutoff=0.25):
         print "Beginning LongContigGraph:", str(datetime.now())
         self.graph = nx.DiGraph()
-        self.mapping = PacbioMapping
         #Parse fasta sequences into graph as nodes
         print "Adding nodes to graph"
         seqs = Fasta(FastaFile)
@@ -28,18 +21,8 @@ class LongContigGraph():
             self.graph.add_node(int(x.name), seq=str(x))
             self.graph.add_node(-1 * int(x.name), seq=self.revc(str(x)))
         print "Nodes in graph:", len(self.graph.nodes())
-        #Process alignments in parallel
-        print "Processing read alignments in parallel"
-        print "Number of threads to use:", num_threads
-        sg_pool = Pool(processes=num_threads, maxtasksperchild=1000)
-        reads = self.mapping.readToContig.keys()
-        chunk = int(ceil(float(len(reads))/num_threads))
-        connection_lists = sg_pool.map(func=UnwrapParallelSubgraph, iterable=zip([self]*len(reads), reads), chunksize=chunk)
-        connection_lists = [clist for clist in connection_lists if clist is not None]
-        sg_pool.close()
-        sg_pool.join()
-        print "Done processing read alignments, now setting edges"
-        for clist in connection_lists:
+        #Parse connections into graph as edges
+        for clist in ConnectionLists:
             for connect in clist:
                 v1, v2, d, n = connect
                 self.set_edge(v1, v2, d, n)
@@ -65,19 +48,6 @@ class LongContigGraph():
         print "Number of edges after branch removal:", len(self.graph.edges())
         self.degree_counter()
         print "Finishing LongContigGraph:", str(datetime.now())
-    
-    def ParallelSubgraph(self, read):
-        sg = PacbioSubgraph(read, self.mapping)
-        self.mapping.readToContig[read] = sg.mapping.readToContig[read]
-        if len(sg.Connects) == 0:
-            return
-        n = len(sg.Connects)
-        report = []
-        for a1, a2, d in sg.Connects:
-            v1 = -1 * a1.tName if a1.tStrand == 1 else a1.tName
-            v2 = -1 * a2.tName if a2.tStrand == 1 else a2.tName
-            report.append((v1, v2, d, n))
-        return report
     
     def revc(self, seq):
         tr = maketrans('ATGCatgc', 'TACGtacg')

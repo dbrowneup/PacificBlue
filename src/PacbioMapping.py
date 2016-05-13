@@ -8,20 +8,21 @@ import matplotlib.pyplot as plt
 class PacbioMapping:
 
     def __init__(self, fileName, fileFormat="m4"):
-        print "Beginning to load PacBio mapping:", str(datetime.now())
+        print "Entering PacbioMapping module:", str(datetime.now())
+        #Read and parse alignments into dictionary of reads (keys) and  alignment objects (values)
         self.readToContig = {}
-        self.alignments = open(fileName, "rU").read().split('\n') # reads alignments
-        self.alignments = self.alignments[1:-1] if "score" in self.alignments[0] else self.alignments[0:-1] # discards empty last row and first row if header is detected
-        self.alignments = set([AbstractAlignment(x.split(' '), fileFormat) for x in self.alignments]) # parses alignments into AbstractAlignment objects
-        self.readToContig = {x.qName: set([]) for x in self.alignments if x.qName not in self.readToContig} # parses qNames into dictionary
-        #parse alignments into dictionary
+        self.alignments = open(fileName, "rU").read().split('\n')
+        self.alignments = self.alignments[1:-1] if "score" in self.alignments[0] else self.alignments[0:-1]
+        self.alignments = set([AbstractAlignment(x.split(' '), fileFormat) for x in self.alignments])
+        self.readToContig = {x.qName: set([]) for x in self.alignments if x.qName not in self.readToContig}
         for x in self.alignments:
             self.readToContig[x.qName].add(x)
-        print "Number of mapping reads:", len(self.readToContig)
-        print "Number of alignments:", len(self.alignments)
+        print "Number of unfiltered reads:", len(self.readToContig)
+        print "Number of unfiltered alignments:", len(self.alignments)
         #Filter out reads with only 1 alignment
+        print "Filtering out reads with only 1 alignment"
         self.filter_reads()
-        print "Finished loading PacBio mapping:", str(datetime.now())
+        print "Leaving PacbioMapping module:", str(datetime.now())
 
     def filter_reads(self):
         filtered_reads = set([])
@@ -30,7 +31,7 @@ class PacbioMapping:
                 filtered_reads.add(k)
                 del self.readToContig[k]
         self.alignments = set([x for x in self.alignments if x.qName not in filtered_reads])
-        print "Number of mapping reads filtered out:", len(filtered_reads)
+        print "Number of mapping reads removed:", len(filtered_reads)
         print "Number of mapping reads remaining:", len(self.readToContig)
 
     def read_mapping_frequency(self, title, bins=50):
