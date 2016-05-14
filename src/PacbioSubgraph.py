@@ -6,37 +6,36 @@ import itertools
 
 class PacbioSubgraph():
 
-    def __init__(self, read, pacbio_mapping, cov_cutoff=3, fraction=0.5):
-        self.mapping = pacbio_mapping
+    def __init__(self, read, alignments, cov_cutoff=3, fraction=0.5):
+        self.mapping = alignments
         #Create array of read aligments by read length
-        self.readArray = self.read_stack(read)
+        self.readArray = self.read_stack()
         #Mark coordinates of alignments on read
         stack_index = 0
-        for n in self.mapping.readToContig[read]:
-            self.mark_coords(stack_index, n.qStart, n.qEnd)
+        for a in self.mapping:
+            self.mark_coords(stack_index, a.qStart, a.qEnd)
             stack_index += 1
         #Calculate per-base coverage of read
         self.covArray = self.readArray.sum(axis=0)
         #Filter out alignments in repetitive regions
         self.repeat_coords = set(self.find_repeats(cov_cutoff))
-        alignments = self.mapping.readToContig[read]
-        self.mapping.readToContig[read] = set([n for n in alignments if not self.filter_repeat(n, fraction)])
+        self.mapping = set([a for a in self.mapping if not self.filter_repeat(a, fraction)])
         #Find 5' and 3' overhangs
         self.FivePOvhg = []
         self.ThrePOvhg = []
-        for n in self.mapping.readToContig[read]:
-            self.find_overhangs(n)
+        for a in self.mapping:
+            self.find_overhangs(a)
         #Connect 5' and 3' overhangs
         self.Connects = []
         possible_connects = list(itertools.product(self.ThrePOvhg, self.FivePOvhg))
         self.Connects = map(self.test_connect, possible_connects)
-        self.Connects = [x for x in self.Connects if x is not None]
+        self.Connects = [c for c in self.Connects if c is not None]
     
-    def read_stack(self, read):
-        stack_size = len(self.mapping.readToContig[read])
-        read_size = next(iter(self.mapping.readToContig[read])).qLength
-        a = np.zeros((stack_size, read_size))
-        return a
+    def read_stack(self):
+        stack_size = len(self.mapping)
+        read_size = next(iter(self.mapping)).qLength
+        stack = np.zeros((stack_size, read_size))
+        return stack
     
     def mark_coords(self, n, qStart, qEnd):
         for i in range(qStart, qEnd):
@@ -49,8 +48,8 @@ class PacbioSubgraph():
                 repeat_coords.append(i)
         return repeat_coords
 
-    def filter_repeat(self, n, fraction):
-        align_coords = set(range(n.qStart, n.qEnd))
+    def filter_repeat(self, a, fraction):
+        align_coords = set(range(a.qStart, a.qEnd))
         bp_in_repeat = align_coords.intersection(self.repeat_coords)
         if len(bp_in_repeat) >= (fraction * len(align_coords)):
             return True

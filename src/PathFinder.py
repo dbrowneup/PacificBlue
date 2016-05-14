@@ -29,6 +29,10 @@ class PathFinder():
         for g in single_node_graphs:
             if -1 * g.nodes()[0] in seqs_in_multi_node_paths:
                 single_node_graphs.discard(g)
+        #Consolidate complementary single node seqs
+        for g in single_node_graphs:
+            if -1 * g.nodes()[0] in sequences:
+                single_node_graphs.discard(g)
         #Build multi-node paths into scaffolds
         self.scaffolds = []
         for g in multi_node_graphs:

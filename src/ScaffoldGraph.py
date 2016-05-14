@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 class ScaffoldGraph():
 
     def __init__(self, FastaFile, ConnectionLists, edge_cutoff=0.25):
-        print "Beginning LongContigGraph:", str(datetime.now())
+        print "Entering ScaffoldGraph module:", str(datetime.now())
         self.graph = nx.DiGraph()
         #Parse fasta sequences into graph as nodes
         print "Adding nodes to graph"
@@ -47,7 +47,7 @@ class ScaffoldGraph():
             self.filter_branches(n)
         print "Number of edges after branch removal:", len(self.graph.edges())
         self.degree_counter()
-        print "Finishing LongContigGraph:", str(datetime.now())
+        print "Leaving ScaffoldGraph module:", str(datetime.now())
     
     def revc(self, seq):
         tr = maketrans('ATGCatgc', 'TACGtacg')
