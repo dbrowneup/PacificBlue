@@ -20,8 +20,6 @@ from PathFinder import PathFinder
 from datetime import datetime
 from multiprocessing import Pool
 from math import ceil
-import networkx as nx
-import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import sys
@@ -31,18 +29,13 @@ import argparse
 
 parser = argparse.ArgumentParser(description="PacificBlue Genome Scaffolder")
 
-parser.add_argument('--blasr-alignments', dest='blasr_alignments')
-parser.add_argument('--blasr-format', dest='blasr_format')
-parser.add_argument('--fasta', dest='fasta_file')
-parser.add_argument('--threads', dest='num_threads')
-parser.add_argument('--output', dest='output_file')
-args = parser.parse_args()
+parser.add_argument('--blasr-alignments', help="BLASR alignment file", dest='blasr_alignments')
+parser.add_argument('--blasr-format', help="Format of BLASR alignments", dest='blasr_format', default="m1")
+parser.add_argument('--fasta', help="Fasta sequences to scaffold", dest='fasta_file')
+parser.add_argument('--threads', help="Number of CPUs to use", dest='num_threads', type=int, default=1)
+parser.add_argument('--output', help="Name of output file", dest='output_file')
 
-blasr_alignments = args.blasr_alignments
-blasr_format = args.blasr_format
-fasta_file = args.fasta_file
-num_threads = args.num_threads
-output_file = args.output_file
+args = parser.parse_args()
 
 
 #Worker function for parallel processing of read alignments
@@ -65,24 +58,24 @@ def ParallelSubgraph(item):
 
 def main():
     #Load BLASR alignments into PacbioMapping object
-    mapping = PacbioMapping(blasr_alignments, fileFormat=blasr_format)
+    mapping = PacbioMapping(args.blasr_alignments, fileFormat=args.blasr_format)
     #Process read alignments in parallel
     print "Entering parallel PacbioSubgraph module:", str(datetime.now())
-    print "Number of threads to use:", num_threads
-    sg_pool = Pool(processes=num_threads)
+    print "Number of threads to use:", args.num_threads
+    sg_pool = Pool(processes=args.num_threads)
     reads = mapping.readToContig.keys()
-    chunk = int(ceil(float(len(reads))/num_threads))
+    chunk = int(ceil(float(len(reads))/args.num_threads))
     connection_lists = sg_pool.map(func=ParallelSubgraph, iterable=mapping.readToContig.items(), chunksize=chunk)
     sg_pool.close()
     sg_pool.join()
     connection_lists = [clist for clist in connection_lists if clist is not None]
     print "Leaving parallel PacbioSubgraph module:", str(datetime.now())
     #Load reported connections in ScaffoldGraph object
-    scaff = ScaffoldGraph(fasta_file, connection_lists)
+    scaff = ScaffoldGraph(args.fasta_file, connection_lists)
     #Build scaffold sequences with PathFinder object
     paths = PathFinder(scaff.graph)
     #Write output to Fasta file
-    out = open(output_file, "w")
+    out = open(args.output_file, "w")
     for i in range(len(path.scaffolds)):
         out.write(">scaffold_"+str(i+1))
         out.write(path.scaffolds[i])
