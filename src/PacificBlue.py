@@ -29,11 +29,11 @@ import argparse
 
 parser = argparse.ArgumentParser(description="PacificBlue Genome Scaffolder")
 
-parser.add_argument('--blasr-alignments', help="BLASR alignment file", dest='blasr_alignments')
-parser.add_argument('--blasr-format', help="Format of BLASR alignments", dest='blasr_format', default="m1")
-parser.add_argument('--fasta', help="Fasta sequences to scaffold", dest='fasta_file')
-parser.add_argument('--threads', help="Number of CPUs to use", dest='num_threads', type=int, default=1)
-parser.add_argument('--output', help="Name of output file", dest='output_file')
+parser.add_argument('--blasr-alignments', help="BLASR alignment file", dest='blasr_alignments', metavar='FILE')
+parser.add_argument('--blasr-format', help="Format of BLASR alignments", dest='blasr_format', default="m1", choices=['m1', 'm4', 'm5'])
+parser.add_argument('--fasta', help="Fasta sequences to scaffold", dest='fasta_file', metavar='FILE')
+parser.add_argument('--threads', help="Number of CPUs to use", dest='num_threads', metavar='NN', type=int, default=1)
+parser.add_argument('--output', help="Name of output file", dest='output_file', metavar='FILE')
 
 args = parser.parse_args()
 
