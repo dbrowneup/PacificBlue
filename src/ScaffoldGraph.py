@@ -119,7 +119,7 @@ class ScaffoldGraph():
             for v1, v2 in self.graph.out_edges(n):
                 e_wt = self.graph[v1][v2]['weights']
                 if e_wt < out_wt.mean():
-                    weak.edges.append((v1, v2))
+                    weak_edges.append((v1, v2))
         return weak_edges
     
     def find_tips(self):
