@@ -50,6 +50,7 @@ class ScaffoldGraph():
         print "Number of edges remaining:", self.G.size()
         self.degree_counter()
         #Filter transitive edges from graph
+        print "Removing transitive edges"
         transitive_edges = self.find_transitive_edges()
         self.G.remove_edges_from(transitive_edges)
         print "Number of edges remaining:", self.G.size()
