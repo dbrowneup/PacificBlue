@@ -52,7 +52,7 @@ class ScaffoldGraph():
         #Filter transitive edges from graph
         transitive_edges = self.find_transitive_edges()
         self.G.remove_edges_from(transitive_edges)
-        prtin "Number of edges remaining:", self.G.size()
+        print "Number of edges remaining:", self.G.size()
         self.degree_counter()
         #Filter weak edges from noisy nodes
         print "Removing weak edges"
@@ -73,14 +73,14 @@ class ScaffoldGraph():
         return seq.translate(tr)[::-1]
 
     def set_edge(self, v1, v2, d, n):
-        #W = weights, inversely proportional to number of connections
-        #    reported from each PacBio read (n)
-        #D = distance estimates, calculated from PacBio alignments
+        #W = weights: inversely proportional to number of connections
+        #             reported from each PacBio read (n)
+        #D = distance estimates: calculated from PacBio alignments
         try:
-            self.G[v1][v2]['W'].append(float(1)/n)
+            self.G[v1][v2]['W'].append(1.0 / n)
             self.G[v1][v2]['D'].append(d)
         except:
-            self.G.add_edge(v1, v2, {'W': [float(1)/n], 'D': [d]})
+            self.G.add_edge(v1, v2, {'W': [1.0 / n], 'D': [d]})
 
     def degree_counter(self):
         deg = self.G.in_degree().values()
@@ -113,22 +113,24 @@ class ScaffoldGraph():
         if (max(de) - min(de)) > abs(de.mean()):
             self.G.remove_edge(v1, v2)
         else:
-            self.G[v1][v2]['W'] = int(sum(wt))
+            self.G[v1][v2]['W'] = int(ceil(sum(wt)))
             self.G[v1][v2]['D'] = int(ceil(de.mean()))
     
     def find_weak_edges(self):
         weak_edges = []
         for n in self.G:
-            in_wt = np.array([self.G[v1][v2]['W'] for v1, v2 in self.G.in_edges(n)])
-            out_wt = np.array([self.G[v1][v2]['W'] for v1, v2 in self.G.out_edges(n)])
-            for v1, v2 in self.G.in_edges(n):
-                e_wt = self.G[v1][v2]['W']
-                if e_wt < in_wt.mean():
-                    weak_edges.append((v1, v2))
-            for v1, v2 in self.G.out_edges(n):
-                e_wt = self.G[v1][v2]['W']
-                if e_wt < out_wt.mean():
-                    weak_edges.append((v1, v2))
+            if self.G.in_degree(n) > 2:
+                in_wt = np.array([self.G[v1][v2]['W'] for v1, v2 in self.G.in_edges(n)])
+                for v1, v2 in self.G.in_edges(n):
+                    e_wt = self.G[v1][v2]['W']
+                    if e_wt < in_wt.mean():
+                        weak_edges.append((v1, v2))
+            if self.G.out_degree(n) > 2:
+                out_wt = np.array([self.G[v1][v2]['W'] for v1, v2 in self.G.out_edges(n)])
+                for v1, v2 in self.G.out_edges(n):
+                    e_wt = self.G[v1][v2]['W']
+                    if e_wt < out_wt.mean():
+                        weak_edges.append((v1, v2))
         return weak_edges
     
     def find_tip_edges(self):

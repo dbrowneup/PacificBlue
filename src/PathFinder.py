@@ -18,20 +18,8 @@ class PathFinder():
         component_graphs = set([g for g in nx.weakly_connected_component_subgraphs(self.G)])
         single_node_graphs = set([g for g in component_graphs if len(g.nodes()) == 1])
         multi_node_graphs = set([g for g in component_graphs if len(g.nodes()) > 1])
-        print "Number of single-node graphs:", len(single_node_graphs)
-        print "Number of multi-node graphs:", len(multi_node_graphs)
-        #Classify multi-node graphs
-        DAG = set([])
-        Euler = set([])
-        for g in multi_node_graphs:
-            if nx.is_directed_acyclic_graph(g):
-                DAG.add(g)
-            elif nx.is_eulerian(g):
-                Euler.add(g)
-            else:
-                sys.exit("FATAL ERROR: Unknown multi-node graph type!")
-        print "Number of directed acyclic graphs:",  len(DAG)
-        print "Number of Eulerian graphs:", len(Euler)
+        print "Number of unprocessed single-node graphs:", len(single_node_graphs)
+        print "Number of unprocessed multi-node graphs:", len(multi_node_graphs)
         #Determine nodes in single-node and multi-node graphs
         self.multi_nodes = set([])
         for g in multi_node_graphs:
@@ -43,14 +31,33 @@ class PathFinder():
         self.double_scaffolded = set([])
         for n in sequences:
             self.classify_nodes(n)
-        single_node_graphs = [g for g in single_node_graphs if self.filter_sng(g)]
+        print "Number of unscaffolded nodes:", len(self.unscaffolded)
+        print "Number of single scaffolded nodes:", len(self.single_scaffolded)
+        print "Number of double scaffolded nodes:", len(self.double_scaffolded)
+        #Remove double-scaffolded sequences
+        self.G.remove_nodes_from(self.double_scaffolded)
+        component_graphs = set([g for g in nx.weakly_connected_component_subgraphs(self.G)])
+        single_node_graphs = set([g for g in component_graphs if len(g.nodes()) == 1 and self.filter_sng(g)])
+        multi_node_graphs = set([g for g in component_graphs if len(g.nodes()) > 1])
+        #Classify multi-node graphs                                                                                                                        
+        DAG = set([])
+        Euler = set([])
+        for g in multi_node_graphs:
+            if nx.is_directed_acyclic_graph(g):
+                DAG.add(g)
+            elif nx.is_eulerian(g):
+                Euler.add(g)
+            else:
+                sys.exit("FATAL ERROR: Unknown multi-node graph type!")
+        print "Number of directed acyclic graphs:",  len(DAG)
+        print "Number of Eulerian graphs:", len(Euler)
         #Build scaffolds from DAGs
         self.scaffolds = []
         for g in DAG:
             self.build_dag_scaffold(g)
         #Build scaffolds from Eulerian graphs
         
-        #Add single node seqs to scaffolds list
+        #Add unscaffolded seqs to scaffolds list
         for g in single_node_graphs:
             seq = self.G.node[g.nodes()[0]]['seq']
             self.scaffolds.append(seq)
