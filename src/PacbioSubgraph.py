@@ -1,164 +1,112 @@
-# This software is Copyright 2013 The Regents of the University of
-# California. All Rights Reserved.
-#
-# Permission to copy, modify, and distribute this software and its
-# documentation for educational, research and non-profit purposes, without fee,
-# and without a written agreement is hereby granted, provided that the above
-# copyright notice, this paragraph and the following three paragraphs appear
-# in all copies.
-#
-# Permission to make commercial use of this software may be obtained by
-# contacting:
-# Technology Transfer Office
-# 9500 Gilman Drive, Mail Code 0910
-# University of California
-# La Jolla, CA 92093-0910
-# (858) 534-5815
-# invent@ucsd.edu
-#
-# This software program and documentation are copyrighted by The Regents of the
-# University of California. The software program and documentation are supplied
-# "as is", without any accompanying services from The Regents. The Regents does
-# not warrant that the operation of the program will be uninterrupted or
-# error-free. The end-user understands that the program was developed for
-# research purposes and is advised not to rely exclusively on the program for
-# any reason.
-#
-# IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO
-# ANY PARTY FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR
-# CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS, ARISING
-# OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION,
-# EVEN IF THE UNIVERSITY OF CALIFORNIA HAS BEEN ADVISED OF
-# THE POSSIBILITY OF SUCH DAMAGE. THE UNIVERSITY OF
-# CALIFORNIA SPECIFICALLY DISCLAIMS ANY WARRANTIES,
-# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-# THE SOFTWARE PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND THE UNIVERSITY OF
-# CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
-# ENHANCEMENTS, OR MODIFICATIONS.
-
-#Author: Viraj Deshpande
-#Contact: vdeshpan@eng.ucsd.edu
-
-from PacbioAlignment import PacbioAlignment
-from illumina_graph import Graph
-from illumina_path import IlluminaPath
-from utils import toggleStrand
+#Re-written by Dan Browne on 04/27/16
 
 
-class PacbioSubgraph(Graph):
+import numpy as np
+import itertools
 
-    def __init__(self, pacbio_id, illumina_graph,
-                 pacbio_mapping, map_margin=0.5,
-                 augment=False, offset_margin=0.1, min_vertex_length=0):
-        Graph.__init__(self)
-        self.pacbio_id = pacbio_id
-        self.vertex_mapping = {}  # pacbio mapping corresponding to vertex
-        self.map_offset = {}  # relative offset of each edge w.r.t. pacbio
-        self.augmented_path = {}
-        ig = illumina_graph
+class PacbioSubgraph():
 
-        dbg_numedges = 0
+    def __init__(self, read, alignments, cov_cutoff=3, fraction=0.5):
+        self.mapping = alignments
+        #Create array of read aligments by read length
+        self.readArray = self.read_stack()
+        #Mark coordinates of alignments on read
+        stack_index = 0
+        for a in self.mapping:
+            self.mark_coords(stack_index, a.qStart, a.qEnd)
+            stack_index += 1
+        #Calculate per-base coverage of read
+        self.covArray = self.readArray.sum(axis=0)
+        #Filter out alignments in repetitive regions
+        self.repeat_coords = set(self.find_repeats(cov_cutoff))
+        self.mapping = set([a for a in self.mapping if not self.filter_repeat(a, fraction)])
+        #Find 5' and 3' overhangs
+        self.FivePOvhg = []
+        self.ThrePOvhg = []
+        for a in self.mapping:
+            self.find_overhangs(a)
+        #Connect 5' and 3' overhangs
+        self.Connects = []
+        possible_connects = list(itertools.product(self.ThrePOvhg, self.FivePOvhg))
+        self.Connects = map(self.test_connect, possible_connects)
+        self.Connects = [c for c in self.Connects if c is not None]
+    
+    def read_stack(self):
+        stack_size = len(self.mapping)
+        read_size = next(iter(self.mapping)).qLength
+        stack = np.zeros((stack_size, read_size))
+        return stack
+    
+    def mark_coords(self, n, qStart, qEnd):
+        for i in range(qStart, qEnd):
+            self.readArray[n][i] = 1
+    
+    def find_repeats(self, cutoff):
+        repeat_coords = []
+        for i in range(len(self.covArray)):
+            if self.covArray[i] > cutoff:
+                repeat_coords.append(i)
+        return repeat_coords
 
-        for i in range(len(pacbio_mapping.readToContig[pacbio_id])):
-            a1 = PacbioAlignment(pacbio_mapping.readToContig[pacbio_id][i])
-            if a1.seqLen < min_vertex_length:
-                continue
-            if not a1.longAlignment(map_margin):
-                continue
-            if a1.queryStrand == '+':
-                s1 = a1.seqStrand
-            else:
-                s1 = toggleStrand(a1.seqStrand)
-            v1 = ig.vs[ig.get_vid(a1.seqID, s1)]
-            self.add_vertex(v1.vid, v1.conj.vid, v1.length, v1.cov)
-            self.vertex_mapping[v1.vid] = a1
-            v1c = v1.conj
-            self.add_vertex(v1c.vid, v1c.conj.vid, v1c.length, v1c.cov)
-            self.vertex_mapping[v1c.vid] = a1
-
-        for i in range(len(pacbio_mapping.readToContig[pacbio_id])):
-            for j in range(len(pacbio_mapping.readToContig[pacbio_id])):
-                if j == i:
-                    continue
-                a1 = PacbioAlignment(pacbio_mapping.
-                                     readToContig[pacbio_id][i])
-                a2 = PacbioAlignment(pacbio_mapping.
-                                     readToContig[pacbio_id][j])
-                if a1.seqLen < min_vertex_length:
-                    continue
-                if a2.seqLen < min_vertex_length:
-                    continue
-                if a2.queryStartPos < a1.queryStartPos:
-                    continue
-                if a1.queryStrand == '+':
-                    s1 = a1.seqStrand
-                else:
-                    s1 = toggleStrand(a1.seqStrand)
-                if a2.queryStrand == '+':
-                    s2 = a2.seqStrand
-                else:
-                    s2 = toggleStrand(a2.seqStrand)
-                if ig.get_vid(a1.seqID, s1) not in self.vs.keys():
-                    continue
-                if ig.get_vid(a2.seqID, s2) not in self.vs.keys():
-                    continue
-
-                for e in ig.vs[ig.get_vid(a1.seqID, s1)].oute:
-                    if e.v2.vid == ig.get_vid(a2.seqID, s2):
-                        if a1.spansEdge(a2, e, offset_margin):
-                            ne = self.add_edge(e.v1.vid, e.v2.vid, e.ovl)
-                            ec = self.add_edge(e.v2.conj.vid,
-                                               e.v1.conj.vid, e.ovl)
-                            self.map_offset[ne] = a1.relative_offset(a2, ne.v1,
-                                                                     ne.v2)
-                            self.map_offset[ec] = a2.relative_offset(a1, ec.v1,
-                                                                     ec.v2)
-                            dbg_numedges += 1
-                            break
-        #print "[" + pacbio_id + "] Num edges: ", dbg_numedges
-        if augment:
-            self.augment(illumina_graph, offset_margin)
-
-    def augment(self, illumina_graph, offset_margin):
-        dbg_numpaths = 0
-        for i in range(len(self.vs)):
-            for j in range(len(self.vs)):
-                if i == j:
-                    continue
-                vid1 = self.vs.keys()[i]
-                vid2 = self.vs.keys()[j]
-                if self.vs[vid2] in self.vs[vid1].outv():
-                    continue
-                a1 = self.vertex_mapping[vid1]
-                a2 = self.vertex_mapping[vid2]
-                offset = a1.relative_offset(a2,
-                                            self.vs[vid1], self.vs[vid2])
-                offsetc = a2.relative_offset(a1, self.vs[vid2].conj,
-                                             self.vs[vid1].conj)
-                if offset is False or offset < 0:
-                    continue
-                if offsetc is False or offsetc < 0:
-                    continue
-                min_offset = (1 - offset_margin) * offset
-                max_offset = (1 + offset_margin) * offset
-                if self.find_path(vid1, vid2, min_offset, max_offset):
-                    continue
-                p = illumina_graph.find_path(vid1, vid2,
-                                             min_offset, max_offset)
-                if p is not None and len(p) > 1:
-                    dbg_numpaths += 1
-                    ip = IlluminaPath(p)
-                    if a1.spansEdge(a2, ip, offset_margin):
-                        continue
-                    ne = self.add_edge(ip.v1.vid, ip.v2.vid, ip.ovl)
-                    ec = self.add_edge(ip.v2.conj.vid, ip.v1.conj.vid,
-                                       ip.ovl)
-                    self.map_offset[ne] = a1.relative_offset(a2, ne.v1, ne.v2)
-                    self.map_offset[ec] = a2.relative_offset(a1, ec.v1, ec.v2)
-                    self.augmented_path[ne] = ip
-                    self.augmented_path[ec] = ip.conj()
-        #print "Num paths: ", dbg_numpaths
-        if dbg_numpaths > 0:
+    def filter_repeat(self, a, fraction):
+        align_coords = set(range(a.qStart, a.qEnd))
+        bp_in_repeat = align_coords.intersection(self.repeat_coords)
+        if len(bp_in_repeat) >= (fraction * len(align_coords)):
             return True
-        return False
+
+    def find_overhangs(self, a):
+        if a.qStart > a.tStart and (a.qLength - a.qEnd) < (a.tLength - a.tEnd):
+#            print "5' overhang"
+            self.FivePOvhg.append(a)
+        elif a.qStart < a.tStart and (a.qLength - a.qEnd) > (a.tLength - a.tEnd):
+#            print "3' overhang"
+            self.ThrePOvhg.append(a)
+        elif a.qStart >= a.tStart and (a.qLength - a.qEnd) >= (a.tLength - a.tEnd):
+#            print "Double overhang or blunt"
+            return
+        elif a.qStart <= a.tStart and (a.qLength - a.qEnd) <= (a.tLength - a.tEnd):
+#            print "No overhang or blunt"
+            return
+        else:
+            print "Unknown overhang!"
+    
+    def test_connect(self, p):
+        tp, fp = p
+        if tp.qEnd <= fp.qStart:
+            if (fp.qEnd - tp.qStart) > (tp.tLength - tp.tEnd + fp.tStart) <= (fp.qStart - tp.qEnd):
+#                print "Read spans gap between scaffolds or connects blunt ends"
+                gap_estimate = (fp.qStart - tp.qEnd) - (tp.tLength - tp.tEnd + fp.tStart)
+                return (tp, fp, gap_estimate)
+            elif (fp.qEnd - tp.qStart) > (tp.tLength - tp.tEnd + fp.tStart) > (fp.qStart - tp.qEnd):
+#                print "Gap between alignments, possible overlap of scaffold ends"
+                overlap_estimate = (fp.qStart - tp.qEnd) - (tp.tLength - tp.tEnd + fp.tStart)
+                return (tp, fp, overlap_estimate)
+            elif (fp.qEnd - tp.qStart) <= (tp.tLength - tp.tEnd + fp.tStart) > (fp.qStart - tp.qEnd):
+#                print "Scaffold ends extend past alignment boundaries"
+                return
+            else:
+                print "Unknown alignment condition 1!"
+        elif fp.qEnd >= tp.qEnd > fp.qStart >= tp.qStart:
+            if fp.tEnd < (fp.qEnd - tp.qStart) > (fp.tLength - fp.tStart):
+#                print "Read spans overlap of scaffold ends"
+                overlap_estimate = (fp.qEnd - tp.qStart) - (fp.tLength - fp.tStart + fp.tEnd)
+                return (tp, fp, overlap_estimate)
+            else:
+#                print "Scaffolds extend beyond alignment boundaries"
+                return
+        elif tp.qEnd >= fp.qEnd > tp.qStart >= fp.qStart:
+#            print "Inversion of expected alignment orientation"
+            return
+        elif fp.qEnd >= tp.qEnd > tp.qStart >= fp.qStart:
+#            print "A1 contained within A2"
+            return
+        elif tp.qEnd >= fp.qEnd > fp.qStart >= tp.qStart:
+#            print "A2 contained within A1"
+            return
+        elif tp.qStart >= fp.qEnd:
+#            print "Gap between inverted alignments, unlikely scaffold overlap"
+            return
+        else:
+#            return
+            print "Unknown alignment condition 2!"
+
