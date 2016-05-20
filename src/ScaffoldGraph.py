@@ -3,6 +3,7 @@
 from pyfaidx import Fasta
 from datetime import datetime
 from string import maketrans
+from math import ceil
 import networkx as nx
 import numpy as np
 import matplotlib
@@ -104,8 +105,8 @@ class ScaffoldGraph():
         if (max(de) - min(de)) > abs(de.mean()):
             self.graph.remove_edge(v1, v2)
         else:
-            self.graph[v1][v2]['weights'] = sum(wt)
-            self.graph[v1][v2]['dist_estimates'] = de.mean()
+            self.graph[v1][v2]['weights'] = int(sum(wt))
+            self.graph[v1][v2]['dist_estimates'] = int(ceil(de.mean()))
     
     def find_weak_edges(self):
         weak_edges = []

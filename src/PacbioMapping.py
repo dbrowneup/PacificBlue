@@ -22,6 +22,8 @@ class PacbioMapping:
         #Filter out reads with only 1 alignment
         print "Filtering out reads with only 1 alignment"
         self.filter_reads()
+        print "Number of filtered reads:", len(self.readToContig)
+        print "Number of filtered alignments:", len(self.alignments)
         print "Leaving PacbioMapping module:", str(datetime.now())
 
     def filter_reads(self):
@@ -31,8 +33,6 @@ class PacbioMapping:
                 filtered_reads.add(k)
                 del self.readToContig[k]
         self.alignments = set([x for x in self.alignments if x.qName not in filtered_reads])
-        print "Number of mapping reads removed:", len(filtered_reads)
-        print "Number of mapping reads remaining:", len(self.readToContig)
 
     def read_mapping_frequency(self, title, bins=50):
         x_axis = [len(x) for x in self.readToContig.values()]

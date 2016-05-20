@@ -11,47 +11,80 @@ class PathFinder():
     
     def __init__(self, scaffold_graph):
         print "Entering PathFinder module:", str(datetime.now())
-        self.G = scaffold_graph
+        self.G = scaffold_graph.copy()
         #Build strandless list of sequences
-        sequences = set([x for x in self.G.nodes() if x > 0])
+        sequences = set([n for n in self.G.nodes() if n > 0])
         #Define weakly connected components
-        component_graphs = set([x for x in nx.weakly_connected_component_subgraphs(self.G)])
-        single_node_graphs = set([x for x in component_graphs if len(x.nodes()) == 1])
-        multi_node_graphs = set([x for x in component_graphs if len(x.nodes()) > 1])
+        component_graphs = set([g for g in nx.weakly_connected_component_subgraphs(self.G)])
+        single_node_graphs = set([g for g in component_graphs if len(g.nodes()) == 1])
+        multi_node_graphs = set([g for g in component_graphs if len(g.nodes()) > 1])
         print "Number of single-node graphs:", len(single_node_graphs)
         print "Number of multi-node graphs:", len(multi_node_graphs)
-        #Define paths in multi-node graphs
-        seqs_in_multi_node_paths = set([])
-        multi_node_paths = [nx.dag_longest_path(x) for x in multi_node_graphs]
-        for path in multi_node_paths:
-            seqs_in_multi_node_paths |= set(path)
-        #Remove single node seqs complementary to multi-node seqs
-        for g in single_node_graphs:
-            if -1 * g.nodes()[0] in seqs_in_multi_node_paths:
-                single_node_graphs.discard(g)
-        #Consolidate complementary single node seqs
-        for g in single_node_graphs:
-            if -1 * g.nodes()[0] in sequences:
-                single_node_graphs.discard(g)
-        #Build multi-node paths into scaffolds
-        self.scaffolds = []
+        #Classify multi-node graphs
+        DAG = set([])
+        Euler = set([])
         for g in multi_node_graphs:
-            self.build_scaffold(g)
+            if nx.is_directed_acyclic_graph(g):
+                DAG.add(g)
+            elif nx.is_eulerian(g):
+                Euler.add(g)
+            else:
+                sys.exit("FATAL ERROR: Unknown multi-node graph type!")
+        print "Number of directed acyclic graphs:",  len(DAG)
+        print "Number of Eulerian graphs:", len(Euler)
+        #Determine nodes in single-node and multi-node graphs
+        self.multi_nodes = set([])
+        for g in multi_node_graphs:
+            self.multi_nodes |= set(g.nodes())
+        self.single_nodes = set([g.nodes()[0] for g in single_node_graphs])
+        #Consolidate all nodes
+        self.unscaffolded = set([])
+        self.single_scaffolded = set([])
+        self.double_scaffolded = set([])
+        for n in sequences:
+            self.classify_nodes(n)
+        single_node_graphs = [g for g in single_node_graphs if self.filter_sng(g)]
+        #Build scaffolds from DAGs
+        self.scaffolds = []
+        for g in DAG:
+            self.build_dag_scaffold(g)
+        #Build scaffolds from Eulerian graphs
+        
         #Add single node seqs to scaffolds list
         for g in single_node_graphs:
-            seq = g[g.nodes()[0]]['seq']
+            seq = self.G.node[g.nodes()[0]]['seq']
             self.scaffolds.append(seq)
-        
         print "Leaving PathFinder module:", str(datetime.now())
     
-    def build_scaffold(self, graph):
+    def classify_nodes(self, n):
+        if n in self.single_nodes and -1*n in self.single_nodes:
+            self.unscaffolded.add(n)
+        elif n in self.single_nodes and -1*n in self.multi_nodes:
+            self.single_scaffolded.add(-1*n)
+        elif n in self.multi_nodes and -1*n in self.single_nodes:
+            self.single_scaffolded.add(n)
+        elif n in self.multi_nodes and -1*n in self.multi_nodes:
+            self.double_scaffolded.add(n)
+            self.double_scaffolded.add(-1*n)
+    
+    def filter_sng(self, g):
+        n = g.nodes()[0]
+        if n in self.unscaffolded:
+            return True
+        else:
+            return False
+    
+    def build_dag_scaffold(self, g):
         scaffold_order = []
         scaffold_seq = ''
+        #Determine path in DAG
+        path = nx.dag_longest_path(g)
         #Add sequence and edge data to scaffold_order
-        for v, e in zip(graph.nodes(), graph.edges() + [None]):
-            seq = graph[v]['seq']
+        for n in path:
+            seq = self.G.node[n]['seq']
             try:
-                dist = graph[v][e[1]]['dist_estimates']
+                e = g.out_edges(n)[0]
+                dist = g[n][e[1]]['dist_estimates']
                 scaffold_order.append(seq)
                 scaffold_order.append(dist)
             except:
@@ -79,14 +112,7 @@ class PathFinder():
         self.scaffolds.append(scaffold_seq)
 
     def merge_sequences(self, merge_seq, scaff_seq, dist_est):
-        five_prime = np.array([n for n in merge_seq])
-        thre_prime = np.array([n for n in scaff_seq])
-        #Test for matching bases in overlap region
-        boolean_overlap = five_prime[dist_est:] == thre_prime[:abs(dist_est)]
-        #Report matching bases, mask mismatches
-        sequence_overlap = (five_prime[dist_est + i] if boolean_overlap[i] else 'N' for i in range(abs(dist_est)))
-        sequence_overlap = ''.join(sequence_overlap)
-        #Return full_sequence
-        full_sequence = ''.join(five_prime[:dist_est]) + sequence_overlap + ''.join(thre_prime[abs(dist_est):])
+        #Return sequences with masked overlap
+        full_sequence = ''.join(merge_seq[:dist_est]) + "N" * dist_est + ''.join(scaff_seq[abs(dist_est):])
         return full_sequence
 

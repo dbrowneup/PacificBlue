@@ -82,9 +82,9 @@ def main():
     paths = PathFinder(scaff.graph)
     #Write output to Fasta file
     out = open(args.output_file, "w")
-    for i in range(len(path.scaffolds)):
-        out.write(">scaffold_"+str(i+1))
-        out.write(path.scaffolds[i])
+    for i in range(len(paths.scaffolds)):
+        out.write(">scaffold_"+str(i+1)+"\n")
+        out.write(paths.scaffolds[i]+"\n")
     out.close()
 
 
