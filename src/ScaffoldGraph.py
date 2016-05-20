@@ -136,6 +136,7 @@ class ScaffoldGraph():
     def find_tip_edges(self):
         tip_edges = []
         for v1, v2 in self.G.edges():
+            v1_in = self.G.in_degree(v1)
             v1_out = self.G.out_degree(v1)
             v2_in = self.G.in_degree(v2)
             v2_out = self.G.out_degree(v2)
