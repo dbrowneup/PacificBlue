@@ -84,7 +84,7 @@ class PathFinder():
             seq = self.G.node[n]['seq']
             try:
                 e = g.out_edges(n)[0]
-                dist = g[n][e[1]]['dist_estimates']
+                dist = g[n][e[1]]['D']
                 scaffold_order.append(seq)
                 scaffold_order.append(dist)
             except:
@@ -105,14 +105,17 @@ class PathFinder():
                 scaffold_seq = merge_seq + scaffold_seq
             elif type(item) is int and item < 0:
                 merge_seq = scaffold_order.pop()
-                scaffold_seq = self.merge_sequences(merge_seq, scaffold_seq, item)
+                scaffold_seq = self.merge_seqs(merge_seq, scaffold_seq, item)
             else:
                 sys.exit('FATAL ERROR: Unknown scaffold building operation!')
         #Report assembled scaffold sequence
         self.scaffolds.append(scaffold_seq)
 
-    def merge_sequences(self, merge_seq, scaff_seq, dist_est):
-        #Return sequences with masked overlap
-        full_sequence = ''.join(merge_seq[:dist_est]) + "N" * dist_est + ''.join(scaff_seq[abs(dist_est):])
+    def merge_seqs(self, merge_seq, scaff_seq, dist):
+        #Return sequences joined with masked overlap
+        five_prime = merge_seq[:dist]
+        thre_prime = scaff_seq[abs(dist):]
+        overlap = 'N' * abs(dist)
+        full_sequence = five_prime + overlap + thre_prime
         return full_sequence
 
