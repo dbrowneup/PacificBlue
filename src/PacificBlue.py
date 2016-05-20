@@ -79,7 +79,7 @@ def main():
     #Load reported connections in ScaffoldGraph object
     scaff = ScaffoldGraph(args.fasta_file, connection_lists, edge_cutoff=args.edge_cutoff)
     #Build scaffold sequences with PathFinder object
-    paths = PathFinder(scaff.graph)
+    paths = PathFinder(scaff.G)
     #Write output to Fasta file
     out = open(args.output_file, "w")
     for i in range(len(paths.scaffolds)):

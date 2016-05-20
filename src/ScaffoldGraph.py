@@ -152,8 +152,8 @@ class ScaffoldGraph():
             if len(self.G.predecessors(n)) == 1 and len(self.G.successors(n)) == 1:
                 p = self.G.predecessors(n)[0]
                 s = self.G.successors(n)[0]
-            if self.G.has_edge(p, s):
-                transitive_edges.append((p, s))
+                if self.G.has_edge(p, s):
+                    transitive_edges.append((p, s))
         return transitive_edges
 
     def find_branches(self):
