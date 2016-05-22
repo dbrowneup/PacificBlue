@@ -46,7 +46,7 @@ args = parser.parse_args()
 
 #Worker function for parallel processing of read alignments
 
-def ParallelSubgraph(item):
+def parallel_subgraph(item):
     read, mapping = item
     sg = PacbioSubgraph(read, mapping, cov_cutoff=args.cov_cutoff, fraction=args.fraction)
     if len(sg.Connects) == 0:
@@ -68,13 +68,14 @@ def main():
     #Process read alignments in parallel
     print "Entering parallel PacbioSubgraph module:", str(datetime.now())
     print "Number of threads to use:", args.num_threads
-    sg_pool = Pool(processes=args.num_threads)
-    reads = mapping.readToContig.keys()
-    chunk = int(ceil(float(len(reads))/args.num_threads))
-    connection_lists = sg_pool.map(func=ParallelSubgraph, iterable=mapping.readToContig.items(), chunksize=chunk)
+    sg_pool = Pool(processes=args.num_threads, maxtasksperchild=100)
+    data = mapping.readToContig.iteritems()
+    connection_lists = []
+    for x in sg_pool.imap_unordered(parallel_subgraph, data, chunksize=100):
+        if x is not None:
+            connection_lists.append(x)
     sg_pool.close()
     sg_pool.join()
-    connection_lists = [clist for clist in connection_lists if clist is not None]
     print "Leaving parallel PacbioSubgraph module:", str(datetime.now())
     #Load reported connections in ScaffoldGraph object
     scaff = ScaffoldGraph(args.fasta_file, connection_lists, edge_cutoff=args.edge_cutoff)
