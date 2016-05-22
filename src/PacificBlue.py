@@ -50,6 +50,7 @@ def parallel_subgraph(item):
     read, mapping = item
     sg = PacbioSubgraph(read, mapping, cov_cutoff=args.cov_cutoff, fraction=args.fraction)
     if len(sg.Connects) == 0:
+        del sg
         return
     n = len(sg.Connects)
     report = []
@@ -57,6 +58,7 @@ def parallel_subgraph(item):
         v1 = -1 * a1.tName if a1.tStrand == 1 else a1.tName
         v2 = -1 * a2.tName if a2.tStrand == 1 else a2.tName
         report.append((v1, v2, d, n))
+    del sg
     return report
 
 
