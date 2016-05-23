@@ -16,14 +16,14 @@ class ScaffoldGraph():
         print "Entering ScaffoldGraph module:", str(datetime.now())
         self.G = nx.DiGraph()
         #Parse fasta sequences into graph as nodes
-        print "Adding nodes to graph"
+        print "1... Adding nodes to graph"
         seqs = Fasta(FastaFile)
         for x in seqs:
             self.G.add_node(int(x.name), seq=str(x))
             self.G.add_node(-1 * int(x.name), seq=self.revc(str(x)))
         print "Nodes in graph:", len(self.G.nodes())
         #Parse connections into graph as edges
-        print "Adding edges to graph"
+        print "2... Adding edges to graph"
         for clist in ConnectionLists:
             for connect in clist:
                 v1, v2, d, n = connect
@@ -31,38 +31,48 @@ class ScaffoldGraph():
         print "Number of unfiltered edges:", self.G.size()
         self.degree_counter()
         #Filter noisy edges
-        print "Removing noisy edges"
+        print "3... Removing noisy edges"
         for v1, v2 in self.G.edges():
             attr = zip(self.G[v1][v2]['W'], self.G[v1][v2]['D'])
             self.filter_noisy_edges(v1, v2, attr, edge_cutoff)
         print "Number of edges remaining:", self.G.size()
         self.degree_counter()
+        #Filter weak edges from noisy nodes
+        print "4... Removing weak edges"
+        weak_edges = self.find_weak_edges()
+        self.G.remove_edges_from(weak_edges)
+        print "Number of edges remaining:", self.G.size()
+        self.degree_counter()
         #Filter self-loop edges
-        print "Removing self-loop edges"
-        selfloops = self.G.selfloop_edges()
+        print "5... Removing self-loop edges"
+        selfloops = self.find_selfloops()
         self.G.remove_edges_from(selfloops)
         print "Number of edges remaining:", self.G.size()
         self.degree_counter()
+        #Add complementary edges to graph
+        print "6... Adding complementary edges to graph"
+        comp_edges_added = 0
+        for v1, v2, d in self.G.edges_iter(data=True):
+            if self.G.has_edge(-1 * v2, -1 * v1):
+                continue
+            else:
+                self.G.add_edge(-1 * v2, -1 * v1, d)
+                comp_edges_added += 1
+        print "Number of edges added:", comp_edges_added
         #Filter edges leading to and from tips
-        print "Removing tip edges"
+        print "7... Removing tip edges"
         tip_edges = self.find_tip_edges()
         self.G.remove_edges_from(tip_edges)
         print "Number of edges remaining:", self.G.size()
         self.degree_counter()
         #Filter transitive edges from graph
-        print "Removing transitive edges"
+        print "8... Removing transitive edges"
         transitive_edges = self.find_transitive_edges()
         self.G.remove_edges_from(transitive_edges)
         print "Number of edges remaining:", self.G.size()
         self.degree_counter()
-        #Filter weak edges from noisy nodes
-        print "Removing weak edges"
-        weak_edges = self.find_weak_edges()
-        self.G.remove_edges_from(weak_edges)
-        print "Number of edges remaining:", self.G.size()
-        self.degree_counter()
         #Filter edges from branching nodes
-        print "Removing branching edges"
+        print "9... Removing branching edges"
         branching_edges = self.find_branches()
         self.G.remove_edges_from(branching_edges)
         print "Number of edges remaining:", self.G.size()
@@ -134,9 +144,17 @@ class ScaffoldGraph():
                         weak_edges.append((v1, v2))
         return weak_edges
     
+    def find_selfloops(self):
+        selfloops = set(self.G.selfloop_edges())
+        for e in self.G.edges_iter():
+            v1, v2 = e
+            if abs(v1) == abs(v2) and e not in selfloops:
+                selfloops.add(e)
+        return list(selfloops)
+    
     def find_tip_edges(self):
         tip_edges = []
-        for v1, v2 in self.G.edges():
+        for v1, v2 in self.G.edges_iter():
             v1_in = self.G.in_degree(v1)
             v1_out = self.G.out_degree(v1)
             v2_in = self.G.in_degree(v2)
