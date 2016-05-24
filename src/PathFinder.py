@@ -1,6 +1,7 @@
 #Written by Dan Browne on 05/11/16
 
 from datetime import datetime
+from string import maketrans
 import networkx as nx
 import numpy as np
 import matplotlib
@@ -15,31 +16,22 @@ class PathFinder():
         #Build strandless list of sequences
         sequences = set([n for n in self.G.nodes() if n > 0])
         #Define weakly connected components
+        print "1... Defining weakly connected components"
         component_graphs = set([g for g in nx.weakly_connected_component_subgraphs(self.G)])
         single_node_graphs = set([g for g in component_graphs if len(g.nodes()) == 1])
         multi_node_graphs = set([g for g in component_graphs if len(g.nodes()) > 1])
-        print "Number of unprocessed single-node graphs:", len(single_node_graphs)
-        print "Number of unprocessed multi-node graphs:", len(multi_node_graphs)
-        #Determine nodes in single-node and multi-node graphs
-        self.multi_nodes = set([])
-        for g in multi_node_graphs:
-            self.multi_nodes |= set(g.nodes())
-        self.single_nodes = set([g.nodes()[0] for g in single_node_graphs])
-        #Consolidate all nodes
-        self.unscaffolded = set([])
-        self.single_scaffolded = set([])
-        self.double_scaffolded = set([])
-        for n in sequences:
-            self.classify_nodes(n)
-        print "Number of unscaffolded nodes:", len(self.unscaffolded)
-        print "Number of single scaffolded nodes:", len(self.single_scaffolded)
-        print "Number of double scaffolded nodes:", len(self.double_scaffolded)
-        #Remove double-scaffolded sequences
-        self.G.remove_nodes_from(self.double_scaffolded)
-        component_graphs = set([g for g in nx.weakly_connected_component_subgraphs(self.G)])
-        single_node_graphs = set([g for g in component_graphs if len(g.nodes()) == 1 and self.filter_sng(g)])
-        multi_node_graphs = set([g for g in component_graphs if len(g.nodes()) > 1])
-        #Classify multi-node graphs                                                                                                                        
+        print "Number of unconnected components:", len(single_node_graphs)
+        print "Number of weakly connected components:", len(multi_node_graphs)
+        #Consolidate unscaffolded nodes, discard reverse strand
+        print "2... Consolidating unconnected components"
+        unscaffolded = set([g.nodes()[0] for g in single_node_graphs])
+        discard_nodes = set([n for n in unscaffolded if n < 0])
+        for g in iter(single_node_graphs.copy()):
+            if g.nodes()[0] in discard_nodes:
+                single_node_graphs.discard(g)
+        print "Number of unscaffolded sequences:", len(single_node_graphs)
+        #Classify multi-node graphs
+        print "3... Classifying weakly connected components"
         DAG = set([])
         Euler = set([])
         for g in multi_node_graphs:
@@ -52,34 +44,30 @@ class PathFinder():
         print "Number of directed acyclic graphs:",  len(DAG)
         print "Number of Eulerian graphs:", len(Euler)
         #Build scaffolds from DAGs
-        self.scaffolds = []
+        print "4... Building scaffolds from directed acyclic graphs"
+        self.scaffolds = set([])
         for g in DAG:
             self.build_dag_scaffold(g)
+        #Consolidating complementary scaffolds, keep first found
+        print "5... Consolidating complementary scaffolds"
+        consolidated_scaff = set([])
+        for seq in iter(self.scaffolds):
+            comp = self.revc(seq)
+            if comp in self.scaffolds:
+                if comp not in consolidated_scaff:
+                    consolidated_scaff.add(seq)
+            else:
+                print "WARNING: non-complemented scaffold"
+        self.scaffolds = consolidated_scaff
+        print "Number of scaffolds assembled:", len(self.scaffolds)
         #Build scaffolds from Eulerian graphs
         
         #Add unscaffolded seqs to scaffolds list
+        print "6... Adding unscaffolded sequences to output"
         for g in single_node_graphs:
             seq = self.G.node[g.nodes()[0]]['seq']
-            self.scaffolds.append(seq)
+            self.scaffolds.add(seq)
         print "Leaving PathFinder module:", str(datetime.now())
-    
-    def classify_nodes(self, n):
-        if n in self.single_nodes and -1*n in self.single_nodes:
-            self.unscaffolded.add(n)
-        elif n in self.single_nodes and -1*n in self.multi_nodes:
-            self.single_scaffolded.add(-1*n)
-        elif n in self.multi_nodes and -1*n in self.single_nodes:
-            self.single_scaffolded.add(n)
-        elif n in self.multi_nodes and -1*n in self.multi_nodes:
-            self.double_scaffolded.add(n)
-            self.double_scaffolded.add(-1*n)
-    
-    def filter_sng(self, g):
-        n = g.nodes()[0]
-        if n in self.unscaffolded:
-            return True
-        else:
-            return False
     
     def build_dag_scaffold(self, g):
         scaffold_order = []
@@ -88,10 +76,10 @@ class PathFinder():
         path = nx.dag_longest_path(g)
         #Add sequence and edge data to scaffold_order
         for n in path:
-            seq = self.G.node[n]['seq']
+            seq = g.node[n]['seq']
             try:
-                e = g.out_edges(n)[0]
-                dist = g[n][e[1]]['D']
+                s = next(g.successors_iter(n))
+                dist = g[n][s]['D']
                 scaffold_order.append(seq)
                 scaffold_order.append(dist)
             except:
@@ -116,8 +104,8 @@ class PathFinder():
             else:
                 sys.exit('FATAL ERROR: Unknown scaffold building operation!')
         #Report assembled scaffold sequence
-        self.scaffolds.append(scaffold_seq)
-
+        self.scaffolds.add(scaffold_seq)
+    
     def merge_seqs(self, merge_seq, scaff_seq, dist):
         #Return sequences joined with masked overlap
         five_prime = merge_seq[:dist]
@@ -125,4 +113,7 @@ class PathFinder():
         overlap = 'N' * abs(dist)
         full_sequence = five_prime + overlap + thre_prime
         return full_sequence
-
+    
+    def revc(self, seq):
+        tr = maketrans('ATGCatgc', 'TACGtacg')
+        return seq.translate(tr)[::-1]
