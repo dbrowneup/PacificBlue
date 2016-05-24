@@ -20,10 +20,10 @@ class PathFinder():
         component_graphs = set([g for g in nx.weakly_connected_component_subgraphs(self.G)])
         single_node_graphs = set([g for g in component_graphs if len(g.nodes()) == 1])
         multi_node_graphs = set([g for g in component_graphs if len(g.nodes()) > 1])
-        print "Number of unconnected components:", len(single_node_graphs)
-        print "Number of weakly connected components:", len(multi_node_graphs)
+        print "Number of single-node components:", len(single_node_graphs)
+        print "Number of multi-node components:", len(multi_node_graphs)
         #Consolidate unscaffolded nodes, discard reverse strand
-        print "2... Consolidating unconnected components"
+        print "2... Consolidating single-node components"
         unscaffolded = set([g.nodes()[0] for g in single_node_graphs])
         discard_nodes = set([n for n in unscaffolded if n < 0])
         for g in iter(single_node_graphs.copy()):
@@ -31,7 +31,7 @@ class PathFinder():
                 single_node_graphs.discard(g)
         print "Number of unscaffolded sequences:", len(single_node_graphs)
         #Classify multi-node graphs
-        print "3... Classifying weakly connected components"
+        print "3... Classifying multi-node components"
         DAG = set([])
         Euler = set([])
         for g in multi_node_graphs:
