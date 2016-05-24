@@ -49,16 +49,17 @@ class ScaffoldGraph():
         self.G.remove_edges_from(selfloops)
         print "Number of edges remaining:", self.G.size()
         self.degree_counter()
-        #Add complementary edges to graph
-        print "6... Adding complementary edges to graph"
+        #Test edge consistency and add edge complements
+        print "6... Testing edge consistency and adding edge complements"
         comp_edges_added = 0
         for v1, v2, d in self.G.edges_iter(data=True):
             if self.G.has_edge(-1 * v2, -1 * v1):
-                continue
+                self.test_edge_consistency(v1, v2)
             else:
                 self.G.add_edge(-1 * v2, -1 * v1, d)
                 comp_edges_added += 1
-        print "Number of edges added:", comp_edges_added
+        print "Number of edge complements added:", comp_edges_added
+        print "Number of edges remaining:", self.G.size() 
         #Filter edges leading to and from tips
         print "7... Removing tip edges"
         tip_edges = self.find_tip_edges()
@@ -151,6 +152,17 @@ class ScaffoldGraph():
             if abs(v1) == abs(v2) and e not in selfloops:
                 selfloops.add(e)
         return list(selfloops)
+    
+    def test_edge_consistency(self, v1, v2):
+        de_f = self.G[v1][v2]['D']
+        de_r = self.G[-1*v2][-1*v1]['D']
+        de = np.array([de_f, de_r])
+        if (max(de) - min(de)) > abs(de.mean()):
+            self.G.remove_edge(v1, v2)
+            self.G.remove_edge(-1*v2, -1*v1)
+        else:
+            self.G[v1][v2]['D'] = int(ceil(de.mean()))
+            self.G[-1*v2][-1*v1]['D'] = int(ceil(de.mean()))
     
     def find_tip_edges(self):
         tip_edges = []
