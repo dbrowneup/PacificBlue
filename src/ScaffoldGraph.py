@@ -180,9 +180,14 @@ class ScaffoldGraph():
     def find_transitive_edges(self):
         transitive_edges = []
         for n in self.G:
-            if len(self.G.predecessors(n)) == 1 and len(self.G.successors(n)) == 1:
+            if len(self.G.predecessors(n)) > 1 or len(self.G.successors(n)) > 1:
+                continue
+            try:
                 p = self.G.predecessors(n)[0]
                 s = self.G.successors(n)[0]
+            except IndexError:
+                continue
+            if self.G.out_degree(p) == 2 and self.G.in_degree(s) == 2:
                 if self.G.has_edge(p, s):
                     transitive_edges.append((p, s))
         return transitive_edges
