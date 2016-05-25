@@ -4,6 +4,7 @@ from pyfaidx import Fasta
 from datetime import datetime
 from string import maketrans
 from math import ceil
+import itertools as it
 import networkx as nx
 import numpy as np
 import matplotlib
@@ -60,20 +61,26 @@ class ScaffoldGraph():
                 comp_edges_added += 1
         print "Number of edge complements added:", comp_edges_added
         print "Number of edges remaining:", self.G.size() 
+        #Filter repetetive edges
+        print "7... Filtering repetitive edges"
+        repetitive_edges = self.find_repetitive_edges()
+        self.G.remove_edges_from(repetitive_edges)
+        print "Number of edges remaining:", self.G.size()
+        self.degree_counter()
         #Filter edges leading to and from tips
-        print "7... Removing tip edges"
+        print "8... Removing tip edges"
         tip_edges = self.find_tip_edges()
         self.G.remove_edges_from(tip_edges)
         print "Number of edges remaining:", self.G.size()
         self.degree_counter()
         #Filter transitive edges from graph
-        print "8... Removing transitive edges"
+        print "9... Removing transitive edges"
         transitive_edges = self.find_transitive_edges()
         self.G.remove_edges_from(transitive_edges)
         print "Number of edges remaining:", self.G.size()
         self.degree_counter()
         #Filter edges from branching nodes
-        print "9... Removing branching edges"
+        print "10... Removing branching edges"
         branching_edges = self.find_branches()
         self.G.remove_edges_from(branching_edges)
         print "Number of edges remaining:", self.G.size()
@@ -164,6 +171,22 @@ class ScaffoldGraph():
             self.G[v1][v2]['D'] = int(ceil(de.mean()))
             self.G[-1*v2][-1*v1]['D'] = int(ceil(de.mean()))
     
+    def find_repetitive_edges(self):
+        repetitive_edges = set([])
+        for n in self.G:
+            p = self.G.predecessors(n)
+            s = self.G.successors(n)
+            if len(p) < 2 or len(s) < 2:
+                continue
+            possibilities = it.product(p, s)
+            for u, w in possibilities:
+                if u == w:
+                    continue
+                if self.G.has_edge(u, w):
+                    repetitive_edges.add((u, n))
+                    repetitive_edges.add((n, w))
+        return list(repetitive_edges)            
+    
     def find_tip_edges(self):
         tip_edges = []
         for v1, v2 in self.G.edges_iter():
@@ -180,16 +203,13 @@ class ScaffoldGraph():
     def find_transitive_edges(self):
         transitive_edges = []
         for n in self.G:
-            if len(self.G.predecessors(n)) > 1 or len(self.G.successors(n)) > 1:
+            p = self.G.predecessors(n)
+            s = self.G.successors(n)
+            if len(p) > 1 or len(p) == 0 or len(s) > 1 or len(s) == 0:
                 continue
-            try:
-                p = self.G.predecessors(n)[0]
-                s = self.G.successors(n)[0]
-            except IndexError:
-                continue
-            if self.G.out_degree(p) == 2 and self.G.in_degree(s) == 2:
-                if self.G.has_edge(p, s):
-                    transitive_edges.append((p, s))
+            if self.G.out_degree(p[0]) == 2 and self.G.in_degree(s[0]) == 2:
+                if self.G.has_edge(p[0], s[0]):
+                    transitive_edges.append((p[0], s[0]))
         return transitive_edges
 
     def find_branches(self):
