@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 class ScaffoldGraph():
 
-    def __init__(self, FastaFile, ConnectionLists, edge_cutoff=0.25):
+    def __init__(self, FastaFile, ConnectionLists, edge_cutoff=0.25, edge_weight=1):
         print "Entering ScaffoldGraph module:", str(datetime.now())
         self.G = nx.DiGraph()
         #Parse fasta sequences into graph as nodes
@@ -35,7 +35,7 @@ class ScaffoldGraph():
         print "3... Removing noisy edges"
         for v1, v2 in self.G.edges():
             attr = zip(self.G[v1][v2]['W'], self.G[v1][v2]['D'])
-            self.filter_noisy_edges(v1, v2, attr, edge_cutoff)
+            self.filter_noisy_edges(v1, v2, attr, edge_cutoff, edge_weight)
         print "Number of edges remaining:", self.G.size()
         self.degree_counter()
         #Filter weak edges from noisy nodes
@@ -116,7 +116,7 @@ class ScaffoldGraph():
         print "IN  0:{0} 1:{1} 2:{2} 3:{3} 4:{4} 5+:{5} Max:{6}".format(*in_deg)
         print "OUT 0:{0} 1:{1} 2:{2} 3:{3} 4:{4} 5+:{5} Max:{6}".format(*out_deg)
     
-    def filter_noisy_edges(self, v1, v2, attr, edge_cutoff):
+    def filter_noisy_edges(self, v1, v2, attr, edge_cutoff, edge_weight):
         credible_attr = []
         for a in attr:
             if a[0] >= edge_cutoff:
@@ -125,7 +125,7 @@ class ScaffoldGraph():
             self.G.remove_edge(v1, v2)
             return
         wt, de = zip(*credible_attr)
-        if sum(wt) < 1:
+        if sum(wt) < edge_weight:
             self.G.remove_edge(v1, v2)
             return
         de = np.array(de)

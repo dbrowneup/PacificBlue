@@ -37,9 +37,10 @@ parser.add_argument('--blasr-format', help="Format of BLASR alignments", dest='b
 parser.add_argument('--fasta', help="Fasta sequences to scaffold", dest='fasta_file', metavar='FILE')
 parser.add_argument('--threads', help="Number of CPUs to use", dest='num_threads', metavar='NN', type=int, default=1)
 parser.add_argument('--output', help="Name of output file", dest='output_file', metavar='FILE')
-parser.add_argument('--cov_cutoff', help="PacbioSubgraph coverage cutoff (default=3)", dest='cov_cutoff', metavar='NN', type=int, default=3)
+parser.add_argument('--cov_cutoff', help="PacbioSubgraph coverage cutoff (default=3)", dest='cov_cutoff', metavar='INT', type=int, default=3)
 parser.add_argument('--fraction', help="PacbioSubgraph repeat fraction (default=0.5)", dest='fraction', metavar='(0,1]', type=float, default=0.5)
 parser.add_argument('--edge_cutoff', help="ScaffoldGraph edge cutoff (default=0.25)", dest='edge_cutoff', metavar='(0,1]', type=float, default=0.25)
+parser.add_argument('--edge_weight', help="ScaffoldGraph edge weight requirement (default=1)", dest='edge_weight', metavar='INT', type=int, default=1)
 
 args = parser.parse_args()
 
@@ -80,7 +81,7 @@ def main():
     sg_pool.join()
     print "Leaving parallel PacbioSubgraph module:", str(datetime.now())
     #Load reported connections in ScaffoldGraph object
-    scaff = ScaffoldGraph(args.fasta_file, connection_lists, edge_cutoff=args.edge_cutoff)
+    scaff = ScaffoldGraph(args.fasta_file, connection_lists, edge_cutoff=args.edge_cutoff, edge_weight=args.edge_weight)
     #Build scaffold sequences with PathFinder object
     paths = PathFinder(scaff.G)
     #Write output to Fasta file
