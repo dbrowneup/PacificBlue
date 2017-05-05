@@ -2,34 +2,37 @@
 
 
 import numpy as np
-import itertools
+import itertools as it
 
 class PacbioSubgraph():
 
-    def __init__(self, read, alignments, cov_cutoff=3, fraction=0.5):
+    def __init__(self, alignments, cov_cutoff, fraction):
         self.mapping = alignments
         #Create array of read aligments by read length
         self.readArray = self.read_stack()
         #Mark coordinates of alignments on read
-        stack_index = 0
-        for a in self.mapping:
-            self.mark_coords(stack_index, a.qStart, a.qEnd)
-            stack_index += 1
+        for i, a in enumerate(self.mapping):
+            self.mark_coords(i, a.qStart, a.qEnd)
         #Calculate per-base coverage of read
         self.covArray = self.readArray.sum(axis=0)
         #Filter out alignments in repetitive regions
-        self.repeat_coords = set(self.find_repeats(cov_cutoff))
-        self.mapping = set([a for a in self.mapping if not self.filter_repeat(a, fraction)])
+        self.mapping = set([a for a in self.mapping if self.uniquity_score(a) > fraction])
+    
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exctype, value, traceback):
+        if exctype is None:
+            return
+
+    def make_connects(self):
         #Find 5' and 3' overhangs
-        self.FivePOvhg = []
-        self.ThrePOvhg = []
-        for a in self.mapping:
-            self.find_overhangs(a)
+        overhang5, overhang3 = self.find_overhangs()
         #Connect 5' and 3' overhangs
-        self.Connects = []
-        possible_connects = list(itertools.product(self.ThrePOvhg, self.FivePOvhg))
-        self.Connects = map(self.test_connect, possible_connects)
-        self.Connects = [c for c in self.Connects if c is not None]
+        connects = list()
+        possible_connects = list(it.product(overhang3, overhang5))
+        connects = it.imap(self.test_connect, possible_connects)
+        return [c for c in connects if c is not None]
     
     def read_stack(self):
         stack_size = len(self.mapping)
@@ -38,37 +41,47 @@ class PacbioSubgraph():
         return stack
     
     def mark_coords(self, n, qStart, qEnd):
-        for i in range(qStart, qEnd):
+        for i in xrange(qStart, qEnd):
             self.readArray[n][i] = 1
+
+    def uniquity_score(self, a):
+        S = sum((float(1)/self.covArray[i] for i in xrange(a.qStart, a.qEnd)))
+        L = float(a.qEnd - a.qStart)
+        MAPU = S/L
+        return MAPU
     
-    def find_repeats(self, cutoff):
-        repeat_coords = []
-        for i in range(len(self.covArray)):
-            if self.covArray[i] > cutoff:
-                repeat_coords.append(i)
-        return repeat_coords
+#    def find_repeats(self, cutoff):
+#        repeat_coords = []
+#        for i in range(len(self.covArray)):
+#            if self.covArray[i] > cutoff:
+#                repeat_coords.append(i)
+#        return repeat_coords
 
-    def filter_repeat(self, a, fraction):
-        align_coords = set(range(a.qStart, a.qEnd))
-        bp_in_repeat = align_coords.intersection(self.repeat_coords)
-        if len(bp_in_repeat) >= (fraction * len(align_coords)):
-            return True
+#    def filter_repeat(self, a, fraction):
+#        align_coords = set(range(a.qStart, a.qEnd))
+#        bp_in_repeat = align_coords.intersection(self.repeat_coords)
+#        if len(bp_in_repeat) >= (fraction * len(align_coords)):
+#            return True
 
-    def find_overhangs(self, a):
-        if a.qStart > a.tStart and (a.qLength - a.qEnd) < (a.tLength - a.tEnd):
-#            print "5' overhang"
-            self.FivePOvhg.append(a)
-        elif a.qStart < a.tStart and (a.qLength - a.qEnd) > (a.tLength - a.tEnd):
-#            print "3' overhang"
-            self.ThrePOvhg.append(a)
-        elif a.qStart >= a.tStart and (a.qLength - a.qEnd) >= (a.tLength - a.tEnd):
-#            print "Double overhang or blunt"
-            return
-        elif a.qStart <= a.tStart and (a.qLength - a.qEnd) <= (a.tLength - a.tEnd):
-#            print "No overhang or blunt"
-            return
-        else:
-            print "Unknown overhang!"
+    def find_overhangs(self):
+        overhang5 = list()
+        overhang3 = list()
+        for a in self.mapping:
+            if a.qStart > a.tStart and (a.qLength - a.qEnd) < (a.tLength - a.tEnd):
+#                print "5' overhang"
+                overhang5.append(a)
+            elif a.qStart < a.tStart and (a.qLength - a.qEnd) > (a.tLength - a.tEnd):
+#                print "3' overhang"
+                overhand3.append(a)
+            elif a.qStart >= a.tStart and (a.qLength - a.qEnd) >= (a.tLength - a.tEnd):
+#                print "Double overhang or blunt"
+                return
+            elif a.qStart <= a.tStart and (a.qLength - a.qEnd) <= (a.tLength - a.tEnd):
+#                print "No overhang or blunt"
+                return
+            else:
+                print "Unknown overhang!"
+        return (overhang5, overhand3)
     
     def test_connect(self, p):
         tp, fp = p
